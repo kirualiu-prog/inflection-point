@@ -1024,6 +1024,24 @@
         text-align: center;
       }
 
+      .loading-progress,
+      .loading-entry {
+        display: grid;
+        gap: 6px;
+      }
+
+      .loading-entry {
+        display: none;
+      }
+
+      .loading-panel[data-ready="true"] .loading-progress {
+        display: none;
+      }
+
+      .loading-panel[data-ready="true"] .loading-entry {
+        display: grid;
+      }
+
       .loading-action {
         min-height: 56px;
         width: 100%;
@@ -2133,7 +2151,6 @@
       function startFlow() {
         if (state.step === "intro") {
           if (state.introLoading || !state.introReady) return;
-          state.introReady = false;
         }
         unlock("scan");
         setStep("scan");
@@ -2142,7 +2159,13 @@
       function finishIntroLoading() {
         state.introLoading = false;
         state.introReady = true;
-        render();
+        const panel = page.querySelector("[data-loading-panel]");
+        const introCopy = page.querySelector("[data-intro-copy]");
+        const actionButton = page.querySelector("[data-action='start']");
+        if (panel) panel.dataset.ready = "true";
+        if (introCopy) introCopy.textContent = "案件資料已就緒。請啟動任務，進入風險掃描。";
+        if (actionButton) actionButton.disabled = false;
+        statusPill.textContent = "SYSTEM READY";
       }
 
       function goClues() {
@@ -2289,17 +2312,13 @@
       }
 
       function setupLoadingPanel() {
+        const panel = page.querySelector("[data-loading-panel]");
         const title = page.querySelector("[data-loading-title]");
         const label = page.querySelector("[data-loading-label]");
         const fill = page.querySelector("[data-loading-fill]");
-        const topline = page.querySelector(".loading-topline");
-        const hint = page.querySelector("[data-loading-hint]");
-        const track = page.querySelector(".loading-track");
         if (!title || !label || !fill) return;
         if (loadingFrame) cancelAnimationFrame(loadingFrame);
-
-        if (topline) topline.dataset.complete = "false";
-        if (track) track.hidden = false;
+        if (panel) panel.dataset.ready = "false";
 
         const duration = 1500;
         const start = performance.now();
@@ -2310,8 +2329,7 @@
           fill.style.setProperty("--width", `${value}%`);
 
           if (value >= 100) {
-            if (hint) hint.textContent = "任務入口已開啟";
-            if (topline) topline.dataset.complete = "false";
+            label.textContent = "100%";
             if (state.step === "intro" && state.introLoading) finishIntroLoading();
             loadingFrame = null;
             return;
@@ -2378,38 +2396,42 @@
             <div class="system-dialog" style="--dialog-bg: url('./素材/scene1拷貝.png');">
               <div class="dialog-body">
                 <span class="system-tag">系統</span>
-                <p class="dialog-copy">${state.introReady ? "案件資料已就緒。請啟動任務，進入風險掃描。" : "分析模組載入中，完成後將開啟任務入口。"}</p>
+                <p class="dialog-copy" data-intro-copy>分析模組載入中，完成後將開啟任務入口。</p>
                 <span class="dialog-caret"></span>
               </div>
             </div>
           `,
-          loadingContent: state.introReady ? `
+          loadingContent: `
             <div class="loading-inner">
-              <button class="loading-action" data-action="start">
-                <span class="report-button-inner">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M4.5 7.5h5l1.6 1.8h8.4v7.2a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-                    <path d="M4.5 9.3V7a2 2 0 0 1 2-2h2.7l1.7 1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  啟動任務
-                </span>
-              </button>
-            </div>
-          ` : `
-            <div class="loading-inner">
-              <div class="loading-topline">
-                <h3 data-loading-title>載入案件資料中...</h3>
-                <span class="label" data-loading-label>0%</span>
+              <div class="loading-progress">
+                <div class="loading-topline">
+                  <h3 data-loading-title>載入案件資料中...</h3>
+                  <span class="label" data-loading-label>0%</span>
+                </div>
+                <div class="loading-track">
+                  <div class="bar is-loading"><span data-loading-fill style="--width: 0%"></span></div>
+                </div>
+                <p class="loading-hint" data-loading-hint>分析模組準備中</p>
               </div>
-              <div class="loading-track">
-                <div class="bar is-loading"><span data-loading-fill style="--width: 0%"></span></div>
+              <div class="loading-entry">
+                <button class="loading-action" data-action="start" disabled>
+                  <span class="report-button-inner">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M4.5 7.5h5l1.6 1.8h8.4v7.2a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                      <path d="M4.5 9.3V7a2 2 0 0 1 2-2h2.7l1.7 1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    啟動任務
+                  </span>
+                </button>
               </div>
-              <p class="loading-hint" data-loading-hint>分析模組準備中</p>
             </div>
           `,
           showLoading: true,
           progressWidth: 42,
-        });
+        }).replace(
+          '<article class="scene-panel compact loading-panel" style="position: relative;">',
+          '<article class="scene-panel compact loading-panel" data-loading-panel data-ready="false" style="position: relative;">'
+        );
       }
 
       function renderScan() {
