@@ -1,0 +1,2897 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#071017" />
+    <title>臨界點解謎室</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050b10;
+        --surface: rgba(9, 16, 23, 0.92);
+        --surface-strong: rgba(7, 13, 19, 0.98);
+        --line: rgba(142, 191, 216, 0.18);
+        --line-strong: rgba(79, 183, 215, 0.28);
+        --text: #edf2f6;
+        --muted: #9babba;
+        --blue: #4fb7d7;
+        --blue-deep: #1f7fa2;
+        --gold: #d7a25d;
+        --danger: #e35a3a;
+        --ok: #67d4c0;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+        --radius: 26px;
+        --title-font: "Iowan Old Style", "Palatino Linotype", "Noto Serif TC", "Songti TC", serif;
+        --body-font: "Avenir Next", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        font-family: var(--body-font);
+        color: var(--text);
+        background:
+          radial-gradient(circle at top, rgba(79, 183, 215, 0.12), transparent 30%),
+          radial-gradient(circle at 85% 12%, rgba(215, 162, 93, 0.09), transparent 20%),
+          linear-gradient(180deg, #071017 0%, #04080c 100%);
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.33;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 42px 42px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.85), transparent 94%);
+      }
+      button, a { font: inherit; }
+      button {
+        border: 0;
+        background: none;
+        color: inherit;
+      }
+      img { display: block; max-width: 100%; }
+      #app {
+        min-height: 100vh;
+        padding: 10px 12px 16px;
+      }
+
+      .app-shell {
+        width: min(100%, 430px);
+        margin: 0 auto;
+        display: grid;
+        gap: 10px;
+      }
+
+      .masthead,
+      .page-card,
+      .story-step,
+      .nav-button,
+      .chip,
+      .stat,
+      .clue,
+      .option,
+      .result-banner,
+      .chart,
+      .footer {
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(16, 26, 35, 0.92), rgba(7, 13, 19, 0.95));
+        box-shadow: var(--shadow);
+      }
+
+      .masthead {
+        border-radius: 22px;
+        padding: 12px 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 10px;
+        backdrop-filter: blur(12px);
+      }
+
+      .brand {
+        display: grid;
+        gap: 4px;
+      }
+
+      .brand small,
+      .meta,
+      .label,
+      .chip,
+      .nav-button,
+      .story-step {
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .brand h1,
+      .page-title,
+      .result-title {
+        margin: 0;
+        font-family: var(--title-font);
+        font-weight: 600;
+      }
+
+      .brand h1 {
+        font-size: clamp(1.2rem, 2vw, 1.7rem);
+      }
+
+      .brand small {
+        color: var(--muted);
+        font-size: 0.72rem;
+      }
+
+      .status-pill {
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(79, 183, 215, 0.13);
+        border: 1px solid rgba(79, 183, 215, 0.22);
+        color: var(--blue);
+        white-space: nowrap;
+        font-size: 0.82rem;
+      }
+
+      .stage-strip {
+        position: sticky;
+        top: 8px;
+        z-index: 15;
+        display: flex;
+        gap: 8px;
+        padding: 6px;
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(6, 12, 18, 0.82);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+        scrollbar-width: none;
+        width: 100%;
+        margin: 0;
+      }
+
+      .stage-strip::-webkit-scrollbar { display: none; }
+
+      .story-grid {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+      }
+
+      .story-step {
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: 38px;
+        border-radius: 18px;
+        padding: 7px 9px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 0;
+      }
+
+      .story-step strong {
+        color: var(--text);
+        font-size: 0.88rem;
+        line-height: 1;
+      }
+
+      .story-step[aria-current="true"] {
+        border-color: rgba(79, 183, 215, 0.42);
+        background: rgba(79, 183, 215, 0.12);
+        color: var(--text);
+      }
+
+      .page {
+        display: grid;
+        gap: 10px;
+        animation: riseIn 220ms ease-out;
+      }
+
+      .page-card {
+        border-radius: var(--radius);
+        overflow: hidden;
+        padding: 14px;
+        backdrop-filter: blur(10px);
+      }
+
+      .scene-shell {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .scene-main {
+        display: grid;
+        gap: 10px;
+      }
+
+      .scene-panel {
+        border-radius: 24px;
+        padding: 13px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          radial-gradient(circle at 15% 18%, rgba(79, 183, 215, 0.08), transparent 20%),
+          linear-gradient(180deg, rgba(10, 17, 24, 0.96), rgba(5, 9, 13, 0.98));
+        min-width: 0;
+      }
+
+      .scene-panel.compact {
+        min-height: 0;
+      }
+
+      .system-panel {
+        padding: 10px 12px;
+      }
+
+      .page-title {
+        font-size: clamp(2.2rem, 7vw, 4.2rem);
+        line-height: 0.93;
+        max-width: 8.4ch;
+        margin-top: 4px;
+      }
+
+      .lede {
+        margin: 0;
+        max-width: 42ch;
+        color: var(--muted);
+        line-height: 1.72;
+      }
+
+      .copy-stack {
+        display: grid;
+        gap: 16px;
+        align-content: start;
+      }
+
+      .chip-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .chip {
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(79, 183, 215, 0.18);
+        background: rgba(79, 183, 215, 0.08);
+        color: var(--blue);
+        font-size: 0.72rem;
+      }
+
+      .action-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .primary,
+      .secondary {
+        min-height: 54px;
+        padding: 14px 18px;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+      }
+
+      .primary {
+        background: linear-gradient(180deg, rgba(215, 162, 93, 0.96), rgba(180, 118, 49, 0.96));
+        color: #081017;
+        font-weight: 700;
+      }
+
+      .secondary {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        color: var(--text);
+      }
+
+      .primary:disabled,
+      .secondary:disabled {
+        cursor: default;
+        transform: none;
+        opacity: 0.42;
+      }
+
+      .primary:disabled {
+        background: linear-gradient(180deg, rgba(57, 68, 78, 0.88), rgba(35, 44, 52, 0.92));
+        color: rgba(237, 242, 246, 0.52);
+      }
+
+      .primary:hover,
+      .secondary:hover,
+      .nav-button:hover,
+      .option:hover,
+      .clue:hover {
+        transform: translateY(-1px);
+      }
+
+      .primary:focus-visible,
+      .secondary:focus-visible,
+      .nav-button:focus-visible,
+      .option:focus-visible,
+      .clue:focus-visible {
+        outline: 2px solid var(--blue);
+        outline-offset: 2px;
+      }
+
+      .mini-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 0.74rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .mini-title {
+        margin: 12px 0 0;
+        font-family: var(--title-font);
+        font-size: clamp(1.55rem, 4vw, 2.2rem);
+        line-height: 1;
+      }
+
+      .mini-copy {
+        margin: 10px 0 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .panel-stack {
+        display: grid;
+        gap: 10px;
+      }
+
+      .panel-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: end;
+      }
+
+      .panel-head h3 {
+        margin: 0;
+        font-size: 0.96rem;
+        letter-spacing: 0.08em;
+      }
+
+      .panel-art {
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .panel-art img {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        display: block;
+      }
+
+      .panel-art .art-caption {
+        padding: 10px 12px 12px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 0.72rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .report-card {
+        position: relative;
+        margin-top: 8px;
+        padding: 14px;
+        border-radius: 24px;
+        border: 1px solid rgba(196, 206, 214, 0.18);
+        background:
+          linear-gradient(180deg, rgba(213, 217, 220, 0.96), rgba(189, 195, 201, 0.94));
+        color: #0d151b;
+        box-shadow:
+          inset 0 0 0 2px rgba(36, 48, 58, 0.22),
+          0 16px 44px rgba(0, 0, 0, 0.24);
+      }
+
+      .report-card::before {
+        content: "";
+        position: absolute;
+        inset: 8px;
+        border-radius: 18px;
+        border: 1px solid rgba(48, 58, 68, 0.16);
+        pointer-events: none;
+      }
+
+      .report-stack {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 10px;
+      }
+
+      .report-topline {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(13, 21, 27, 0.68);
+      }
+
+      .report-divider {
+        height: 1px;
+        background: rgba(13, 21, 27, 0.14);
+      }
+
+      .report-title {
+        margin: 0;
+        font-family: var(--title-font);
+        font-size: clamp(1.7rem, 10.2vw, 2.85rem);
+        line-height: 1;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+
+      .report-metric {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .report-icon {
+        width: 64px;
+        aspect-ratio: 1;
+        display: grid;
+        place-items: center;
+        color: #163445;
+      }
+
+      .report-icon svg {
+        width: 52px;
+        height: 52px;
+      }
+
+      .report-metric-copy {
+        display: grid;
+        gap: 4px;
+      }
+
+      .report-metric-copy span {
+        font-size: 0.98rem;
+        color: rgba(13, 21, 27, 0.74);
+      }
+
+      .report-metric-copy strong {
+        font-size: clamp(2rem, 7vw, 3rem);
+        line-height: 0.95;
+      }
+
+      .report-arrow {
+        width: 0;
+        height: 0;
+        border-left: 18px solid transparent;
+        border-right: 18px solid transparent;
+        border-bottom: 28px solid #163a4b;
+      }
+
+      .report-target {
+        padding: 13px 15px;
+        border-radius: 16px;
+        border: 1px solid rgba(13, 21, 27, 0.12);
+        background: rgba(247, 249, 251, 0.48);
+        display: grid;
+        gap: 6px;
+      }
+
+      .report-target span {
+        font-size: 0.95rem;
+        color: rgba(13, 21, 27, 0.64);
+      }
+
+      .report-target strong {
+        font-family: var(--title-font);
+        font-size: clamp(1.35rem, 8.4vw, 2.15rem);
+        line-height: 1.04;
+        white-space: nowrap;
+      }
+
+      .report-button {
+        min-height: 56px;
+        border-radius: 16px;
+        border: 2px solid rgba(215, 162, 93, 0.44);
+        background: linear-gradient(180deg, rgba(19, 29, 38, 0.94), rgba(7, 13, 19, 0.98));
+        color: var(--gold);
+        font-size: 1.28rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+      }
+
+      .report-button .report-button-inner {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .report-button svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .stat-grid {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .stat {
+        min-height: 96px;
+        border-radius: 18px;
+        padding: 14px;
+        display: grid;
+        gap: 12px;
+        align-content: space-between;
+      }
+
+      .stat strong {
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+
+      .stat span {
+        font-family: var(--title-font);
+        font-size: clamp(1.45rem, 4vw, 2.1rem);
+        line-height: 1;
+      }
+
+      .scan-shell {
+        display: grid;
+        gap: 8px;
+      }
+
+      .scan-board {
+        display: grid;
+        gap: 8px;
+      }
+
+      .scan-card {
+        border-radius: 22px;
+        border: 1px solid rgba(121, 157, 176, 0.18);
+        background:
+          linear-gradient(180deg, rgba(9, 16, 23, 0.96), rgba(6, 11, 15, 0.98));
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+      }
+
+      .scan-card.report {
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .scan-card.side {
+        padding: 10px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .scan-card-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 0.74rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .scan-report-title {
+        margin: 0;
+        font-family: var(--title-font);
+        font-size: clamp(1.75rem, 8.5vw, 2.7rem);
+        line-height: 1;
+        text-align: center;
+        color: rgba(233, 240, 244, 0.92);
+      }
+
+      .scan-metric-card {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .scan-metric-card:first-of-type {
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .scan-icon-ring {
+        width: 52px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border: 1px solid rgba(121, 157, 176, 0.42);
+        display: grid;
+        place-items: center;
+        color: rgba(95, 193, 216, 0.92);
+      }
+
+      .scan-icon-ring svg {
+        width: 28px;
+        height: 28px;
+      }
+
+      .scan-metric-copy {
+        display: grid;
+        gap: 2px;
+      }
+
+      .scan-metric-copy strong {
+        color: rgba(224, 232, 237, 0.82);
+        font-size: 0.94rem;
+        font-weight: 500;
+      }
+
+      .scan-metric-copy span {
+        font-family: var(--title-font);
+        font-size: clamp(1.85rem, 8.4vw, 2.7rem);
+        line-height: 0.95;
+        color: rgba(95, 193, 216, 0.9);
+      }
+
+      .scan-metric-copy small {
+        color: rgba(155, 171, 186, 0.72);
+        font-size: 0.78rem;
+        letter-spacing: 0.06em;
+      }
+
+      .scan-up-arrow {
+        width: 0;
+        height: 0;
+        border-left: 14px solid transparent;
+        border-right: 14px solid transparent;
+        border-bottom: 24px solid rgba(58, 164, 190, 0.88);
+        opacity: 0.9;
+      }
+
+      .scan-chart-box {
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding-top: 10px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .scan-chart-box strong,
+      .scan-side-card strong {
+        color: rgba(224, 232, 237, 0.82);
+        font-size: 0.92rem;
+        font-weight: 500;
+      }
+
+      .scan-chart-svg {
+        width: 100%;
+        height: 92px;
+      }
+
+      .scan-side-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .scan-side-card {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 10px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .scan-alert {
+        border-color: rgba(227, 90, 58, 0.22);
+        background: linear-gradient(180deg, rgba(38, 12, 10, 0.42), rgba(20, 8, 8, 0.34));
+      }
+
+      .scan-alert-label {
+        color: var(--danger);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .scan-alert-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .scan-alert-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 18px;
+        border: 1px solid rgba(227, 90, 58, 0.28);
+        display: grid;
+        place-items: center;
+        color: var(--danger);
+      }
+
+      .scan-alert-icon svg {
+        width: 28px;
+        height: 28px;
+      }
+
+      .scan-alert p {
+        margin: 0;
+        text-align: left;
+        line-height: 1.35;
+      }
+
+      .scan-alert em {
+        color: var(--danger);
+        font-style: normal;
+        animation: readyBlink 1.8s ease-in-out infinite;
+      }
+
+      .scan-alert .timeline {
+        gap: 6px;
+      }
+
+      .scan-alert .timeline-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+        align-items: stretch;
+        font-size: 0.75rem;
+      }
+
+      .scan-alert .timeline-row span,
+      .scan-alert .timeline-row strong {
+        line-height: 1.1;
+      }
+
+      .scan-alert .timeline-row strong {
+        justify-self: end;
+        color: rgba(237, 242, 246, 0.82);
+        font-size: 0.74rem;
+      }
+
+      .scan-alert .bar {
+        height: 10px;
+      }
+
+      .scan-side-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .scan-side-item {
+        display: grid;
+        gap: 2px;
+      }
+
+      .scan-side-item label {
+        font-size: 0.72rem;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .scan-side-item b {
+        font-size: 1.2rem;
+        color: var(--blue);
+      }
+
+      .scan-side-item strong {
+        font-size: 0.95rem;
+      }
+
+      .system-dialog {
+        position: relative;
+        border-radius: 22px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(3, 8, 12, 0.86), rgba(4, 9, 14, 0.96)),
+          var(--dialog-bg);
+        background-size: cover;
+        background-position: center;
+      }
+
+      .system-dialog::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(6, 12, 18, 0.42), rgba(3, 7, 11, 0.8));
+        pointer-events: none;
+      }
+
+      .system-dialog .dialog-body {
+        position: relative;
+        z-index: 1;
+        padding: 12px 12px 10px;
+        min-height: 126px;
+        display: grid;
+        align-content: start;
+        gap: 8px;
+      }
+
+      .system-tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 0;
+        padding: 0;
+        color: var(--blue);
+        font-size: 0.9rem;
+        letter-spacing: 0.08em;
+      }
+
+      .dialog-copy {
+        margin: 0;
+        max-width: 26ch;
+        font-size: clamp(1.08rem, 2.25vw, 1.7rem);
+        line-height: 1.55;
+        color: #eef4f8;
+      }
+
+      .dialog-caret {
+        justify-self: end;
+        width: 0;
+        height: 0;
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-top: 14px solid rgba(233, 238, 242, 0.85);
+        opacity: 0.9;
+      }
+
+      .message-slot {
+        margin-top: 4px;
+      }
+
+      .timeline { display: grid; gap: 8px; }
+
+      .timeline-row {
+        display: grid;
+        grid-template-columns: 84px 1fr 52px;
+        gap: 10px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .bar {
+        position: relative;
+        height: 14px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .bar > span {
+        position: relative;
+        display: block;
+        height: 100%;
+        width: var(--width, 50%);
+        background: linear-gradient(90deg, rgba(215, 162, 93, 0.95), rgba(227, 90, 58, 0.92));
+      }
+
+      .bar.is-loading > span {
+        background:
+          linear-gradient(90deg, rgba(46, 153, 190, 0.96), rgba(79, 183, 215, 0.96) 48%, rgba(114, 220, 242, 0.98));
+        box-shadow: 0 0 18px rgba(79, 183, 215, 0.35);
+        animation: loadingPulse 900ms ease-in-out infinite alternate;
+      }
+
+      .bar.is-loading > span::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.06) 0 6px,
+          rgba(255, 255, 255, 0.28) 6px 12px
+        );
+        mix-blend-mode: screen;
+        animation: loadingShift 700ms linear infinite;
+      }
+
+      .loading-panel {
+        border-radius: 24px;
+        border: 1px solid rgba(79, 183, 215, 0.12);
+        background:
+          linear-gradient(180deg, rgba(6, 12, 18, 0.96), rgba(4, 9, 14, 0.98)),
+          url('./素材/scene1拷貝.png');
+        background-size: cover;
+        background-position: center bottom;
+        overflow: hidden;
+      }
+
+      .loading-panel::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(3, 7, 11, 0.72), rgba(3, 7, 11, 0.92));
+        pointer-events: none;
+      }
+
+      .loading-panel .loading-inner {
+        position: relative;
+        z-index: 1;
+        padding: 12px 14px 14px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .loading-topline {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+      }
+
+      .loading-topline h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .loading-topline[data-complete="true"] {
+        min-height: 54px;
+        display: grid;
+        grid-template-columns: 1fr;
+        place-items: center;
+        justify-items: center;
+        text-align: center;
+        width: 100%;
+      }
+
+      .loading-topline[data-complete="true"] h3 {
+        width: 100%;
+        font-size: clamp(1.6rem, 6vw, 2rem);
+        color: var(--blue);
+        letter-spacing: 0.18em;
+        text-align: center;
+        animation: readyBlink 1s ease-in-out 3;
+        text-shadow: 0 0 18px rgba(79, 183, 215, 0.28);
+      }
+
+      .loading-topline[data-complete="true"] .label {
+        display: none;
+      }
+
+      .loading-topline .label:empty {
+        display: none;
+      }
+
+      .loading-track {
+        padding: 8px 8px 10px;
+        border-radius: 14px;
+        border: 1px solid rgba(79, 183, 215, 0.1);
+        background: rgba(0, 0, 0, 0.22);
+      }
+
+      .clue-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .evidence-shell {
+        display: grid;
+        gap: 10px;
+      }
+
+      .evidence-head {
+        display: grid;
+        gap: 6px;
+        text-align: center;
+      }
+
+      .evidence-head .kicker {
+        color: var(--muted);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-size: 0.76rem;
+      }
+
+      .evidence-head h3 {
+        margin: 0;
+        font-size: 1.7rem;
+        letter-spacing: 0.08em;
+        font-family: var(--body-font);
+        font-weight: 500;
+      }
+
+      .evidence-head p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .evidence-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .evidence-card {
+        position: relative;
+        min-height: 176px;
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(180deg, rgba(12, 18, 25, 0.96), rgba(7, 12, 18, 0.98));
+        text-align: left;
+        color: var(--text);
+        transition: transform 180ms ease, opacity 180ms ease, border-color 180ms ease;
+        touch-action: pan-y;
+        overflow: hidden;
+        perspective: 1000px;
+      }
+
+      .evidence-card[data-tone="blue"] {
+        border-color: rgba(79, 183, 215, 0.24);
+      }
+
+      .evidence-card[data-tone="red"] {
+        border-color: rgba(227, 90, 58, 0.24);
+      }
+
+      .evidence-card[data-tone="gold"] {
+        border-color: rgba(215, 162, 93, 0.24);
+      }
+
+      .evidence-card[data-swipe="left"] {
+        transform: translateX(-18px) rotate(-2deg);
+      }
+
+      .evidence-card[data-swipe="right"] {
+        transform: translateX(18px) rotate(2deg);
+      }
+
+      .evidence-card-inner {
+        position: relative;
+        min-height: 174px;
+        transform-style: preserve-3d;
+        transition: transform 260ms ease;
+      }
+
+      .evidence-card[data-flipped="true"] .evidence-card-inner {
+        transform: rotateY(180deg);
+      }
+
+      .evidence-face {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        align-content: space-between;
+        gap: 8px;
+        padding: 10px 10px 8px;
+        backface-visibility: hidden;
+      }
+
+      .evidence-face.back {
+        transform: rotateY(180deg);
+      }
+
+      .evidence-card-head,
+      .evidence-card-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .evidence-code {
+        display: grid;
+        gap: 1px;
+      }
+
+      .evidence-code strong {
+        font-size: 1rem;
+        color: var(--text);
+      }
+
+      .evidence-code span,
+      .evidence-card-foot span {
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .evidence-icon {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        border: 1px solid currentColor;
+        color: inherit;
+        opacity: 0.9;
+      }
+
+      .evidence-hint-button,
+      .evidence-close-button {
+        appearance: none;
+        border: 0;
+        background: none;
+        padding: 0;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .evidence-hint-button {
+        border-radius: 50%;
+      }
+
+      .evidence-close-button {
+        width: 18px;
+        height: 18px;
+        display: grid;
+        place-items: center;
+      }
+
+      .evidence-card[data-tone="blue"] .evidence-icon,
+      .evidence-card[data-tone="blue"] .evidence-code strong,
+      .evidence-card[data-tone="blue"] .evidence-value {
+        color: #89aebe;
+      }
+
+      .evidence-card[data-tone="red"] .evidence-icon,
+      .evidence-card[data-tone="red"] .evidence-code strong,
+      .evidence-card[data-tone="red"] .evidence-value,
+      .evidence-card[data-tone="red"] .evidence-card-foot b {
+        color: #c79a86;
+      }
+
+      .evidence-card[data-tone="gold"] .evidence-icon,
+      .evidence-card[data-tone="gold"] .evidence-code strong,
+      .evidence-card[data-tone="gold"] .evidence-value,
+      .evidence-card[data-tone="gold"] .evidence-card-foot b {
+        color: #b5a07a;
+      }
+
+      .evidence-icon svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .evidence-body {
+        display: grid;
+        gap: 6px;
+        justify-items: start;
+        text-align: left;
+        padding: 6px 0 8px;
+      }
+
+      .evidence-title {
+        margin: 0;
+        font-size: 0.95rem;
+        line-height: 1.3;
+      }
+
+      .evidence-value {
+        font-family: var(--title-font);
+        font-size: 1.55rem;
+        line-height: 1;
+      }
+
+      .evidence-note {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.76rem;
+        line-height: 1.38;
+      }
+
+      .evidence-hint-copy {
+        margin: 0;
+        color: rgba(236, 241, 245, 0.88);
+        font-size: 0.9rem;
+        line-height: 1.55;
+      }
+
+      .evidence-back-label {
+        color: var(--muted);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+      }
+
+      .evidence-card-foot {
+        padding-top: 7px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        justify-content: center;
+        align-items: center;
+      }
+
+      .evidence-close-icon {
+        width: 14px;
+        height: 14px;
+        opacity: 0.4;
+      }
+
+      .evidence-close-icon path {
+        stroke: rgba(237, 242, 246, 0.62);
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .evidence-goal {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 12px;
+        border-radius: 18px;
+        border: 1px solid rgba(215, 162, 93, 0.22);
+        background: linear-gradient(180deg, rgba(11, 17, 22, 0.94), rgba(7, 11, 16, 0.98));
+        padding: 12px 14px;
+      }
+
+      .evidence-goal-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        color: var(--gold);
+      }
+
+      .evidence-goal-icon svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .evidence-goal-copy {
+        display: grid;
+        gap: 3px;
+      }
+
+      .evidence-goal-copy span {
+        color: var(--muted);
+      }
+
+      .evidence-goal-copy strong {
+        font-size: 1.05rem;
+        font-weight: 500;
+      }
+
+      .clue {
+        min-height: 124px;
+        border-radius: 20px;
+        padding: 14px;
+        text-align: left;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.03);
+        transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+      }
+
+      .clue[data-picked="true"] {
+        border-color: rgba(103, 212, 192, 0.62);
+        background: rgba(103, 212, 192, 0.1);
+      }
+
+      .clue .kicker {
+        display: block;
+        color: var(--blue);
+        margin-bottom: 10px;
+        font-size: 0.76rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .clue strong {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 1rem;
+      }
+
+      .clue p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .selected-strip {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .selected-tag {
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: rgba(103, 212, 192, 0.1);
+        border: 1px solid rgba(103, 212, 192, 0.18);
+        color: var(--ok);
+        font-size: 0.78rem;
+      }
+
+      .quiz-shell {
+        display: grid;
+        gap: 12px;
+      }
+
+      .quiz-header {
+        display: grid;
+        gap: 6px;
+      }
+
+      .quiz-header .kicker {
+        color: var(--muted);
+        font-size: 0.76rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .quiz-question {
+        margin: 0;
+        font-family: var(--title-font);
+        font-size: clamp(1.7rem, 8vw, 2.7rem);
+        line-height: 1.15;
+      }
+
+      .option-grid { display: grid; gap: 10px; }
+
+      .option {
+        min-height: 66px;
+        padding: 16px 18px;
+        border-radius: 20px;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: linear-gradient(180deg, rgba(9, 17, 25, 0.96), rgba(6, 11, 17, 0.98));
+        border: 1px solid rgba(94, 184, 214, 0.22);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+      }
+
+      .option strong {
+        width: 2rem;
+        color: var(--blue);
+        font-size: 1.1rem;
+      }
+
+      .option span {
+        font-size: 1rem;
+      }
+
+      .option[data-state="selected"] {
+        border-color: rgba(103, 212, 192, 0.65);
+        background: linear-gradient(180deg, rgba(12, 31, 34, 0.96), rgba(7, 19, 21, 0.98));
+      }
+
+      .option[data-state="locked"] {
+        pointer-events: none;
+      }
+
+      .result-banner {
+        border-radius: 20px;
+        padding: 16px;
+        display: grid;
+        gap: 10px;
+        background: rgba(103, 212, 192, 0.08);
+        border: 1px solid rgba(103, 212, 192, 0.18);
+      }
+
+      .result-banner.danger {
+        background: rgba(227, 90, 58, 0.08);
+        border-color: rgba(227, 90, 58, 0.18);
+      }
+
+      .result-shell {
+        display: grid;
+        gap: 12px;
+      }
+
+      .result-correct-bar {
+        display: grid;
+        gap: 10px;
+      }
+
+      .result-answer-box {
+        border-radius: 20px;
+        border: 1px solid rgba(79, 183, 215, 0.18);
+        background: linear-gradient(180deg, rgba(8, 15, 22, 0.96), rgba(5, 10, 15, 0.98));
+        padding: 12px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .result-question-title {
+        margin: 0 0 2px;
+        color: rgba(237, 242, 246, 0.9);
+        font-size: 1rem;
+        line-height: 1.4;
+      }
+
+      .result-answer-row {
+        min-height: 44px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        display: grid;
+        grid-template-columns: 28px 1fr auto;
+        align-items: center;
+        gap: 10px;
+        padding: 0 12px;
+        color: rgba(237, 242, 246, 0.88);
+      }
+
+      .result-answer-row.correct {
+        border-color: rgba(103, 212, 192, 0.52);
+        background: rgba(103, 212, 192, 0.08);
+      }
+
+      .result-answer-row.wrong {
+        border-color: rgba(227, 90, 58, 0.5);
+        background: rgba(227, 90, 58, 0.08);
+      }
+
+      .result-answer-row strong {
+        color: var(--blue);
+      }
+
+      .result-check {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1px solid rgba(103, 212, 192, 0.5);
+        display: grid;
+        place-items: center;
+        color: var(--ok);
+      }
+
+      .result-check svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .result-alert-side {
+        border-radius: 18px;
+        border: 1px solid rgba(227, 90, 58, 0.22);
+        background: linear-gradient(180deg, rgba(38, 12, 10, 0.42), rgba(20, 8, 8, 0.34));
+        padding: 12px 10px;
+        display: grid;
+        gap: 10px;
+        align-content: start;
+      }
+
+      .result-alert-side span {
+        color: var(--danger);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-size: 0.78rem;
+      }
+
+      .result-status {
+        min-height: 62px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+        font-size: 1.8rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .result-status.correct {
+        color: var(--ok);
+        background: rgba(103, 212, 192, 0.08);
+        border-color: rgba(103, 212, 192, 0.18);
+      }
+
+      .result-status.wrong {
+        color: var(--danger);
+        background: rgba(227, 90, 58, 0.08);
+        border-color: rgba(227, 90, 58, 0.18);
+      }
+
+      .result-inline-system {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(180deg, rgba(8, 15, 22, 0.96), rgba(5, 10, 15, 0.98)),
+          url('./素材/scene1拷貝.png');
+        background-size: cover;
+        background-position: center;
+        padding: 12px 14px;
+      }
+
+      .recalc-board {
+        border-radius: 20px;
+        border: 1px solid rgba(79, 183, 215, 0.16);
+        background: linear-gradient(180deg, rgba(8, 15, 22, 0.96), rgba(5, 10, 15, 0.98));
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .recalc-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 0.74rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .recalc-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .recalc-card {
+        min-height: 106px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 10px 9px;
+        display: grid;
+        gap: 5px;
+        align-content: start;
+      }
+
+      .recalc-card small {
+        color: var(--muted);
+        line-height: 1.25;
+      }
+
+      .recalc-card strong {
+        font-size: 0.94rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+        line-height: 1.05;
+      }
+
+      .recalc-card .value-strong {
+        font-size: 0.72rem;
+        font-weight: 400;
+        letter-spacing: 0;
+      }
+
+      .recalc-card .up {
+        color: var(--ok);
+        font-size: 1.42rem;
+        font-weight: 700;
+      }
+
+      .recalc-card .down {
+        color: var(--danger);
+        font-size: 1.42rem;
+        font-weight: 700;
+      }
+
+      .recalc-center {
+        display: grid;
+        place-items: center;
+        text-align: center;
+      }
+
+      .recalc-center .ring {
+        position: relative;
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        border: 2px solid rgba(103, 212, 192, 0.32);
+        display: grid;
+        place-items: center;
+        color: var(--ok);
+        margin-bottom: 8px;
+        animation: ringPulse 2.4s ease-in-out infinite;
+      }
+
+      .recalc-center .ring::after {
+        content: "";
+        position: absolute;
+        inset: -6px;
+        border-radius: 50%;
+        border: 1px dashed rgba(103, 212, 192, 0.26);
+        animation: ringSpin 6s linear infinite;
+      }
+
+      .recalc-center .ring svg {
+        width: 30px;
+        height: 30px;
+      }
+
+      .recalc-center .center-lines {
+        display: grid;
+        gap: 2px;
+      }
+
+      .recalc-line-chart {
+        width: 100%;
+        height: 150px;
+      }
+
+      .result-map {
+        display: grid;
+        gap: 12px;
+      }
+
+      .risk-map {
+        border-radius: 20px;
+        border: 1px solid rgba(79, 183, 215, 0.18);
+        background: linear-gradient(180deg, rgba(8, 15, 22, 0.96), rgba(5, 10, 15, 0.98));
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .risk-map-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 0.74rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .risk-map-figure {
+        width: 100%;
+        margin: 0;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .risk-map-figure img {
+        width: 100%;
+        display: block;
+      }
+
+      .result-quote {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 14px;
+        font-size: 1rem;
+        line-height: 1.55;
+      }
+
+      .result-quote .quote-line {
+        white-space: nowrap;
+      }
+
+      .result-quote strong {
+        color: var(--gold);
+        font-size: 1.7rem;
+        font-family: var(--title-font);
+        font-weight: 700;
+      }
+
+      .result-cover {
+        width: min(100%, 356px);
+        margin: 0 auto;
+        border-radius: 18px;
+        border: 1px solid rgba(79, 183, 215, 0.14);
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 10%, rgba(79, 183, 215, 0.08), transparent 58%),
+          rgba(255, 255, 255, 0.02);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+      }
+
+      .result-cover img {
+        width: 100%;
+        display: block;
+        object-fit: contain;
+      }
+
+      .report-complete {
+        display: grid;
+        gap: 12px;
+      }
+
+      .download-box {
+        border-radius: 20px;
+        border: 1px solid rgba(79, 183, 215, 0.18);
+        background:
+          radial-gradient(circle at top, rgba(79, 183, 215, 0.06), transparent 34%),
+          linear-gradient(180deg, rgba(8, 15, 22, 0.96), rgba(5, 10, 15, 0.98));
+        padding: 16px 14px 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .download-box .download-copy {
+        text-align: center;
+        display: grid;
+        gap: 4px;
+      }
+
+      .download-box .download-copy small {
+        color: var(--muted);
+        letter-spacing: 0.08em;
+      }
+
+      .download-box .download-copy strong {
+        display: block;
+        margin-top: 0;
+        font-size: 1.78rem;
+        line-height: 1.12;
+      }
+
+      .download-box .download-copy em {
+        color: var(--gold);
+        font-style: normal;
+      }
+
+      .download-button {
+        min-height: 58px;
+        border-radius: 18px;
+        border: 1px solid rgba(79, 183, 215, 0.32);
+        background: linear-gradient(180deg, rgba(7, 19, 29, 0.98), rgba(5, 13, 20, 1));
+        color: var(--blue);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.28rem;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+      }
+
+      .download-status {
+        min-height: 30px;
+        border-radius: 999px;
+        border: 1px solid rgba(79, 183, 215, 0.14);
+        background: rgba(79, 183, 215, 0.06);
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 0.74rem;
+      }
+
+      .result-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .result-actions > * {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+        text-decoration: none;
+      }
+
+      .reveal {
+        opacity: 0;
+        transform: translateY(18px);
+        transition: opacity 420ms ease, transform 420ms ease;
+      }
+
+      .reveal.reveal-left {
+        transform: translateX(-24px);
+      }
+
+      .reveal.reveal-right {
+        transform: translateX(24px);
+      }
+
+      .reveal.is-visible {
+        opacity: 1;
+        transform: translateX(0) translateY(0);
+      }
+
+      .reveal.delay-1 { transition-delay: 320ms; }
+      .reveal.delay-2 { transition-delay: 1040ms; }
+      .reveal.delay-3 { transition-delay: 1760ms; }
+
+      .result-title {
+        font-size: clamp(1.7rem, 4vw, 2.7rem);
+        margin-top: 2px;
+      }
+
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .score-card {
+        min-height: 88px;
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: grid;
+        align-content: space-between;
+      }
+
+      .score-card small {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .score-card strong {
+        font-size: 1.2rem;
+      }
+
+      .chart {
+        border-radius: 20px;
+        padding: 16px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .chart-row {
+        display: grid;
+        grid-template-columns: 112px 1fr 54px;
+        gap: 10px;
+        align-items: center;
+        font-size: 0.9rem;
+      }
+
+      .chart-row .bar > span {
+        background: linear-gradient(90deg, rgba(79, 183, 215, 0.92), rgba(103, 212, 192, 0.95));
+      }
+
+      .footer {
+        border-radius: 20px;
+        padding: 14px 16px;
+        color: var(--muted);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        text-align: center;
+      }
+
+      .scanline {
+        position: relative;
+      }
+
+      .scanline::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent, rgba(79, 183, 215, 0.08), transparent);
+        transform: translateY(-120%);
+        animation: scan 2.7s linear infinite;
+        pointer-events: none;
+      }
+
+      @keyframes riseIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 0.56; transform: scale(0.98); }
+        50% { opacity: 1; transform: scale(1.02); }
+      }
+
+      @keyframes scan {
+        0% { transform: translateY(-120%); }
+        100% { transform: translateY(120%); }
+      }
+
+      @keyframes loadingPulse {
+        from { filter: brightness(0.92); }
+        to { filter: brightness(1.08); }
+      }
+
+      @keyframes loadingShift {
+        from { transform: translateX(-18px); }
+        to { transform: translateX(18px); }
+      }
+
+      @keyframes readyBlink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.32; }
+      }
+
+      @keyframes ringPulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(103, 212, 192, 0); }
+        50% { transform: scale(1.04); box-shadow: 0 0 22px rgba(103, 212, 192, 0.18); }
+      }
+
+      @keyframes ringSpin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      @media (max-width: 900px) {
+        .story-grid,
+        .score-grid,
+        .clue-grid {
+          grid-template-columns: 1fr;
+        }
+        .stat-grid {
+          grid-template-columns: 1fr;
+        }
+        .scan-side-grid {
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+        .stage-strip { top: 8px; }
+      }
+
+      @media (max-width: 640px) {
+        #app { padding: 8px 8px 14px; }
+        .app-shell { gap: 8px; }
+        .masthead,
+        .page-card,
+        .footer {
+          border-radius: 20px;
+        }
+        .result-actions {
+          grid-template-columns: 1fr;
+        }
+        .page-card {
+          padding: 12px;
+        }
+        .page-title {
+          max-width: 100%;
+        }
+        .stage-strip {
+          gap: 6px;
+          padding: 6px;
+          top: 8px;
+        }
+        .story-step { padding: 7px 8px; }
+        .report-card {
+          padding: 12px;
+        }
+        .report-metric {
+          grid-template-columns: auto 1fr;
+        }
+        .scan-side-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .report-arrow {
+          display: none;
+        }
+        .report-button {
+          font-size: 1.28rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="app-shell">
+        <header class="masthead">
+          <div class="brand">
+            <small>CASE FILE: PR-7X1</small>
+            <h1>臨界點解謎室</h1>
+          </div>
+          <div class="status-pill" id="status-pill">SYSTEM READY</div>
+        </header>
+
+        <section class="stage-strip" id="story-grid"></section>
+        <main id="page"></main>
+
+        <footer class="footer">
+          <span>RISK · DATA · TRUTH</span>
+        </footer>
+      </div>
+    </div>
+
+    <script>
+      const mission = {
+        code: "PR-7X1",
+        title: "臨界點解謎室",
+        mission: "MISSION 01",
+        goal: "找出消失的獲利",
+        brief: "這家公司帳面上看起來很漂亮，但系統已經偵測到風險異常。你要在手機式的節奏裡找出真正問題。",
+        scan: 92,
+        network: 88,
+        risk: "ELEVATED",
+        clues: [
+          { id: "d", code: "01", title: "營收成長", value: "12%", text: "表面數字亮眼，但只能說明成長，不足以解釋風險異常。", correct: false, tone: "gold" },
+          { id: "b", code: "02", title: "廢棄物處理成本上升", value: "COST", text: "處理費持續拉高，但沒有完整反映在當期獲利。", correct: true, tone: "blue" },
+          { id: "e", code: "03", title: "品牌聲量波動", value: "MEDIA", text: "聲量有起伏，但和財報異常沒有直接對應。", correct: false, tone: "red" },
+          { id: "a", code: "04", title: "碳成本尚未入帳", value: "CO2", text: "部分碳排相關成本延後認列，導致獲利被高估。", correct: true, tone: "gold" },
+          { id: "f", code: "05", title: "市場需求下降", value: "DEMAND", text: "需求沒有明顯萎縮，不是這次獲利失真的主因。", correct: false, tone: "blue" },
+          { id: "c", code: "06", title: "綠電採購缺口擴大", value: "POWER", text: "綠電不足會墊高未來履約成本，是重要風險來源。", correct: true, tone: "red" },
+        ],
+        question: "為什麼帳面上的獲利與實際狀況不符？",
+        choices: [
+          { key: "A", text: "市場需求突然萎縮" },
+          { key: "B", text: "品牌聲量大幅下滑" },
+          { key: "C", text: "環境成本尚未完整入帳" },
+          { key: "D", text: "產品組合策略錯誤" },
+        ],
+        answer: "C",
+        explanation: "真正問題不是營收，而是環境成本、廢棄物處理與綠電採購缺口尚未完整入帳，讓獲利被高估。",
+      };
+
+      const steps = [
+        { id: "intro", title: "任務", label: "MISSION" },
+        { id: "scan", title: "掃描", label: "SCAN" },
+        { id: "clues", title: "線索", label: "CLUES" },
+        { id: "quiz", title: "解題", label: "DECISION" },
+      ];
+
+      const state = {
+        step: "intro",
+        unlocked: 0,
+        picked: new Set(),
+        removed: new Set(),
+        selected: null,
+        outcome: null,
+        score: 0,
+      };
+
+      const page = document.querySelector("#page");
+      const storyGrid = document.querySelector("#story-grid");
+      const statusPill = document.querySelector("#status-pill");
+      let loadingFrame = null;
+
+      function unlock(stepId) {
+        const idx = steps.findIndex((step) => step.id === stepId);
+        state.unlocked = Math.max(state.unlocked, idx);
+      }
+
+      function canOpen(stepId) {
+        return steps.findIndex((step) => step.id === stepId) <= state.unlocked;
+      }
+
+      function setStep(stepId) {
+        if (!canOpen(stepId)) return;
+        state.step = stepId;
+        render();
+      }
+
+      function startFlow() {
+        unlock("scan");
+        setStep("scan");
+      }
+
+      function goClues() {
+        unlock("clues");
+        setStep("clues");
+      }
+
+      function goQuiz() {
+        if (!canStartQuiz()) return;
+        unlock("quiz");
+        state.selected = null;
+        state.step = "quiz";
+        render();
+      }
+
+      function getActiveClues() {
+        return mission.clues.filter((clue) => !state.removed.has(clue.id));
+      }
+
+      function getCorrectClues() {
+        return mission.clues.filter((clue) => clue.correct);
+      }
+
+      function canStartQuiz() {
+        const active = getActiveClues();
+        const correctCount = getCorrectClues().length;
+        return active.length === correctCount && active.every((clue) => clue.correct);
+      }
+
+      function evaluateAnswer(choice) {
+        const correct = choice === mission.answer;
+        const evidenceBonus = getActiveClues().length * 8;
+        return {
+          correct,
+          title: correct ? "CORRECT" : "FALSE TRAIL",
+          score: correct ? 100 + evidenceBonus : 0,
+          detail: correct
+            ? mission.explanation
+            : "答案方向不對。真正的風險藏在尚未入帳的成本，而不是表面成長。",
+        };
+      }
+
+      function submitAnswer(choice) {
+        state.selected = choice;
+        state.outcome = evaluateAnswer(choice);
+        state.score = state.outcome.score;
+        unlock("quiz");
+        unlock("result");
+        state.step = "result";
+        render();
+      }
+
+      function resetAll() {
+        state.step = "intro";
+        state.unlocked = 0;
+        state.picked = new Set();
+        state.removed = new Set();
+        state.selected = null;
+        state.outcome = null;
+        state.score = 0;
+        render();
+      }
+
+      async function shareExperience() {
+        const shareData = {
+          title: "臨界點解謎室",
+          text: "我剛完成臨界點解謎室，一起來看企業真正的成本。",
+          url: "https://csrone.com/researches/2",
+        };
+
+        try {
+          if (navigator.share) {
+            await navigator.share(shareData);
+            statusPill.textContent = "SHARE READY";
+            return;
+          }
+
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(shareData.url);
+            statusPill.textContent = "LINK COPIED";
+            return;
+          }
+        } catch (error) {
+          statusPill.textContent = "SHARE CANCELLED";
+          return;
+        }
+
+        statusPill.textContent = "COPY MANUALLY";
+      }
+
+      function renderStory() {
+        storyGrid.innerHTML = steps.map((step, index) => `
+          <button
+            class="story-step"
+            aria-current="${state.step === step.id ? "true" : "false"}"
+            data-step="${step.id}"
+            ${canOpen(step.id) ? "" : "disabled"}
+          >
+            <strong>${step.title}</strong>
+          </button>
+        `).join("");
+      }
+
+      function renderScene({ header, center, message, progressWidth, actionBar, showLoading = true, showSystem = true }) {
+        return `
+          <section class="page">
+            <article class="page-card scene-shell">
+                <div class="scene-main">
+                <div class="scene-panel compact">
+                  <div class="panel-head">
+                    <h3>${header}</h3>
+                    <span class="label">${state.step.toUpperCase()}</span>
+                  </div>
+                </div>
+
+                <div class="scene-panel">
+                  ${center}
+                </div>
+
+                ${showSystem ? `
+                  <div class="scene-panel compact system-panel">
+                    <div class="message-slot">${message}</div>
+                    ${actionBar || ""}
+                  </div>
+                ` : ""}
+
+                ${!showSystem && actionBar ? `
+                  <div class="scene-panel compact">
+                    ${actionBar}
+                  </div>
+                ` : ""}
+              </div>
+            </article>
+
+            ${showLoading ? `
+              <article class="page-card loading-panel" style="position: relative;">
+                <div class="loading-inner">
+                  <div class="loading-topline">
+                    <h3 data-loading-title>載入案件資料中...</h3>
+                    <span class="label" data-loading-label>0%</span>
+                  </div>
+                  <div class="loading-track">
+                    <div class="bar is-loading"><span data-loading-fill style="--width: 0%"></span></div>
+                  </div>
+                </div>
+              </article>
+            ` : ""}
+          </section>
+        `;
+      }
+
+      function setupLoadingPanel() {
+        const title = page.querySelector("[data-loading-title]");
+        const label = page.querySelector("[data-loading-label]");
+        const fill = page.querySelector("[data-loading-fill]");
+        const topline = page.querySelector(".loading-topline");
+        const track = page.querySelector(".loading-track");
+        if (!title || !label || !fill) return;
+        if (loadingFrame) cancelAnimationFrame(loadingFrame);
+
+        if (topline) topline.dataset.complete = "false";
+        if (track) track.hidden = false;
+
+        const duration = 5000;
+        const start = performance.now();
+
+        function tick(now) {
+          const progress = Math.min(1, (now - start) / duration);
+          const value = Math.round(progress * 100);
+          fill.style.setProperty("--width", `${value}%`);
+
+          if (value >= 100) {
+            title.textContent = "準備完成";
+            label.textContent = "";
+            if (topline) topline.dataset.complete = "true";
+            if (track) track.hidden = true;
+            loadingFrame = null;
+            return;
+          }
+
+          label.textContent = `${value}%`;
+          loadingFrame = requestAnimationFrame(tick);
+        }
+
+        loadingFrame = requestAnimationFrame(tick);
+      }
+
+      function setupRevealSections() {
+        const sections = page.querySelectorAll(".reveal");
+        if (!sections.length) return;
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-visible");
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.24 });
+        sections.forEach((section) => observer.observe(section));
+      }
+
+      function renderIntro() {
+        return renderScene({
+          header: `${mission.mission} | 找出消失的獲利`,
+          center: `
+            <section class="report-card" aria-label="年度獲利成長任務卡">
+              <div class="report-stack">
+                <div class="report-topline">
+                  <span>CORPORATE FINANCIAL REPORT</span>
+                  <span>FY 2024</span>
+                </div>
+                <div class="report-divider"></div>
+                <h2 class="report-title">年度獲利成長</h2>
+                <div class="report-divider"></div>
+                <div class="report-metric">
+                  <div class="report-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M5 17.5 10 12.8l3 2.2 5.6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M15.9 8h3.1v3.1" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="10" cy="12.8" r="1" fill="currentColor"/>
+                      <circle cx="13" cy="15" r="1" fill="currentColor"/>
+                    </svg>
+                  </div>
+                  <div class="report-metric-copy">
+                    <span>營收成長</span>
+                    <strong>+18.7%</strong>
+                  </div>
+                  <div class="report-arrow" aria-hidden="true"></div>
+                </div>
+                <div class="report-target">
+                  <span>任務目標</span>
+                  <strong>找出消失的獲利</strong>
+                </div>
+                <button class="report-button" data-action="start">
+                  <span class="report-button-inner">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M4.5 7.5h5l1.6 1.8h8.4v7.2a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                      <path d="M4.5 9.3V7a2 2 0 0 1 2-2h2.7l1.7 1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    啟動任務
+                  </span>
+                </button>
+              </div>
+            </section>
+          `,
+          message: `
+            <div class="system-dialog" style="--dialog-bg: url('./素材/scene1拷貝.png');">
+              <div class="dialog-body">
+                <span class="system-tag">系統</span>
+                <p class="dialog-copy">新任務已接收。請啟動分析模組，調查獲利異常事件。</p>
+                <span class="dialog-caret"></span>
+              </div>
+            </div>
+          `,
+          progressWidth: 42,
+        });
+      }
+
+      function renderScan() {
+        return renderScene({
+          header: "LIVE SCAN | 財報異常",
+          center: `
+            <section class="scan-shell">
+              <div class="scan-board">
+                <article class="scan-card report">
+                  <div class="scan-card-head">
+                    <span>CORPORATE FINANCIAL REPORT</span>
+                    <span>FY 2024</span>
+                  </div>
+                  <h3 class="scan-report-title">年度獲利成長</h3>
+                  <div class="scan-metric-card">
+                    <div class="scan-icon-ring" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M5 17.5 10 12.8l3 2.2 5.6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15.9 8h3.1v3.1" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    <div class="scan-metric-copy">
+                      <strong>營收成長</strong>
+                      <span>+18.7%</span>
+                      <small>YoY | NT$ 245,600,000</small>
+                    </div>
+                    <div class="scan-up-arrow" aria-hidden="true"></div>
+                  </div>
+                  <div class="scan-metric-card">
+                    <div class="scan-icon-ring" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 4.8v14.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M16.5 8.2c0-1.8-1.9-3.2-4.3-3.2S8 6.2 8 7.9c0 4.2 8.7 2.1 8.7 6.3 0 1.8-2 3.3-4.7 3.3s-4.8-1.4-4.8-3.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <div class="scan-metric-copy">
+                      <strong>稅後淨利成長</strong>
+                      <span>+22.4%</span>
+                      <small>YoY | NT$ 32,450,000</small>
+                    </div>
+                    <div class="scan-up-arrow" aria-hidden="true"></div>
+                  </div>
+                  <div class="scan-chart-box">
+                    <strong>過去五年獲利趨勢</strong>
+                    <svg class="scan-chart-svg" viewBox="0 0 320 110" fill="none" aria-hidden="true">
+                      <path d="M18 95.5H302" stroke="rgba(255,255,255,0.08)"/>
+                      <path d="M18 72H302" stroke="rgba(255,255,255,0.05)"/>
+                      <path d="M18 48H302" stroke="rgba(255,255,255,0.05)"/>
+                      <path d="M18 24H302" stroke="rgba(255,255,255,0.05)"/>
+                      <path d="M22 84 L92 62 L155 46 L222 32 L286 10" stroke="#53b9d8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="92" cy="62" r="4" fill="#081017" stroke="#53b9d8" stroke-width="2"/>
+                      <circle cx="155" cy="46" r="4" fill="#081017" stroke="#53b9d8" stroke-width="2"/>
+                      <circle cx="222" cy="32" r="4" fill="#081017" stroke="#53b9d8" stroke-width="2"/>
+                      <circle cx="286" cy="10" r="4" fill="#081017" stroke="#53b9d8" stroke-width="2"/>
+                      <g fill="rgba(155,171,186,0.72)" font-size="11">
+                        <text x="30" y="106">2020</text>
+                        <text x="95" y="106">2021</text>
+                        <text x="160" y="106">2022</text>
+                        <text x="226" y="106">2023</text>
+                        <text x="282" y="106">2024</text>
+                      </g>
+                    </svg>
+                  </div>
+                </article>
+                <aside class="scan-side-grid">
+                  <article class="scan-card side">
+                    <div class="scan-side-list">
+                      <div class="scan-side-item">
+                        <label>DATA SCAN</label>
+                        <b>87%</b>
+                      </div>
+                      <div class="scan-side-item">
+                        <label>SOURCE</label>
+                        <strong>FINANCIAL DB</strong>
+                      </div>
+                      <div class="scan-side-item">
+                        <label>CROSS CHECK</label>
+                        <strong>IN PROGRESS</strong>
+                      </div>
+                    </div>
+                  </article>
+                  <article class="scan-card side scan-alert">
+                    <span class="scan-alert-label">RISK ALERT</span>
+                    <div class="scan-alert-row">
+                      <p>異常訊號<br><em>偵測中...</em></p>
+                      <div class="scan-alert-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M12 4.5 20 18.5H4L12 4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                          <path d="M12 9v4.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                          <circle cx="12" cy="16.8" r="1" fill="currentColor"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="timeline">
+                      <div class="timeline-row"><span>風險掃描</span><div class="bar"><span style="--width: 86%"></span></div><strong>86%</strong></div>
+                      <div class="timeline-row"><span>資料可信度</span><div class="bar"><span style="--width: 26%"></span></div><strong>26%</strong></div>
+                      <div class="timeline-row"><span>異常訊號</span><div class="bar"><span style="--width: 92%"></span></div><strong>92%</strong></div>
+                    </div>
+                  </article>
+                </aside>
+              </div>
+            </section>
+          `,
+          message: `
+            <div class="system-dialog" style="--dialog-bg: url('./素材/scene1拷貝.png');">
+              <div class="dialog-body">
+                <span class="system-tag">系統</span>
+                <p class="dialog-copy">這家公司看起來很賺錢，<br>但系統判定風險異常。問題出在哪裡？</p>
+                <span class="dialog-caret"></span>
+              </div>
+            </div>
+          `,
+          actionBar: `
+            <div class="action-row" style="margin-top: 8px; justify-content: center;">
+              <button class="primary" data-action="open-clues">進入線索</button>
+            </div>
+          `,
+          showLoading: false,
+          progressWidth: 86,
+        });
+      }
+
+      function renderClues() {
+        const activeClues = getActiveClues();
+        const ready = canStartQuiz();
+        return renderScene({
+          header: "CLUE ANALYSIS | 線索分頁",
+          center: `
+            <section class="evidence-shell">
+              <p class="mini-copy" style="margin: 0 0 2px;">左右滑動排除無效線索，只有留下真正異常項目，系統才會開啟解題。（點卡片右上角圖示有小提示）。</p>
+              <div class="evidence-grid">
+                ${activeClues.map((clue) => `
+                  <article class="evidence-card" data-evidence="${clue.id}" data-tone="${clue.tone}">
+                    <div class="evidence-card-inner">
+                      <div class="evidence-face front">
+                        <div class="evidence-card-head">
+                          <div class="evidence-code">
+                            <strong>${clue.code}</strong>
+                            <span>clue</span>
+                          </div>
+                          <button class="evidence-hint-button" data-clue-hint="${clue.id}" aria-label="查看提示">
+                            <div class="evidence-icon" aria-hidden="true">
+                              ${renderClueIcon(clue)}
+                            </div>
+                          </button>
+                        </div>
+                        <div class="evidence-body">
+                          <h4 class="evidence-title">${clue.title}</h4>
+                          <div class="evidence-value">${clue.value}</div>
+                        </div>
+                        <div class="evidence-card-foot">
+                          <button class="evidence-close-button" data-clue-remove="${clue.id}" aria-label="排除線索">
+                            <svg class="evidence-close-icon" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                              <path d="M3 3 11 11M11 3 3 11"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="evidence-face back">
+                        <div class="evidence-card-head">
+                          <div class="evidence-code">
+                            <strong>${clue.code}</strong>
+                            <span class="evidence-back-label">hint</span>
+                          </div>
+                          <button class="evidence-hint-button" data-clue-hint="${clue.id}" aria-label="返回線索">
+                            <div class="evidence-icon" aria-hidden="true">
+                              ${renderClueIcon(clue)}
+                            </div>
+                          </button>
+                        </div>
+                        <div class="evidence-body">
+                          <h4 class="evidence-title">${clue.title}</h4>
+                          <p class="evidence-hint-copy">${clue.text}</p>
+                        </div>
+                        <div class="evidence-card-foot">
+                          <button class="evidence-close-button" data-clue-remove="${clue.id}" aria-label="排除線索">
+                            <svg class="evidence-close-icon" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                              <path d="M3 3 11 11M11 3 3 11"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                `).join("")}
+              </div>
+              <div class="evidence-goal">
+                <div class="evidence-goal-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4.5 7.5h5l1.6 1.8h8.4v7.2a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                    <path d="M4.5 9.3V7a2 2 0 0 1 2-2h2.7l1.7 1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="evidence-goal-copy">
+                  <span>任務目標</span>
+                  <strong>${ready ? "正確線索已保留，可進入答題" : "把錯誤線索滑掉，留下真正異常項目"}</strong>
+                </div>
+              </div>
+            </section>
+          `,
+          message: `
+            <div class="system-dialog" style="--dialog-bg: url('./素材/scene1拷貝.png');">
+              <div class="dialog-body">
+                <span class="system-tag">系統</span>
+                <p class="dialog-copy">別急著破關。有些成本，還沒被算進去。</p>
+                <span class="dialog-caret"></span>
+              </div>
+            </div>
+          `,
+          actionBar: `
+            <div class="action-row" style="margin-top: 8px; justify-content: space-between;">
+              <button class="secondary" data-action="reset-clues">重置</button>
+              <button class="primary" data-action="open-quiz" ${ready ? "" : "disabled"}>進入答題</button>
+            </div>
+          `,
+          showLoading: false,
+          progressWidth: 0,
+        });
+      }
+
+      function renderClueIcon(clue) {
+        if (clue.id === "a") {
+          return `
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M5 17.5 10 12.8l3 2.2 5.6-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15.9 8h3.1v3.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          `;
+        }
+        if (clue.id === "b") {
+          return `
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 4.5 20 18.5H4L12 4.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+              <text x="8.1" y="15.2" fill="currentColor" font-size="5.6" font-family="Arial">CO₂</text>
+            </svg>
+          `;
+        }
+        if (clue.id === "c") {
+          return `
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M8 7h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              <path d="M9 7V5.8h6V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              <path d="M7.2 9h9.6l-.8 8.4a2 2 0 0 1-2 1.8h-4a2 2 0 0 1-2-1.8L7.2 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+            </svg>
+          `;
+        }
+        if (clue.id === "d") {
+          return `
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12.8 4.8 8.9 12h3l-.8 7.2 4.9-8h-3.1l-.1-6.4Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+            </svg>
+          `;
+        }
+        if (clue.id === "e") {
+          return `
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M7 15.4a3.4 3.4 0 1 1 0-6.8 3.4 3.4 0 0 1 0 6.8Zm10 3a3.4 3.4 0 1 1 0-6.8 3.4 3.4 0 0 1 0 6.8Z" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M10 9.8 13.9 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+          `;
+        }
+        if (clue.id === "f") {
+          return `
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M5 9.5h14M5 14.5h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M16.5 12.5 19 15l-2.5 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          `;
+        }
+        if (clue.id === "g") {
+          return `
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M7.5 8.5 12 4l4.5 4.5M12 5v10.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M7 17.5h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+          `;
+        }
+        return `
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M7 8.5h10M7 12h10M7 15.5h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        `;
+      }
+
+      function renderQuiz() {
+        return renderScene({
+          header: "INTERACTIVE QUESTION | 判斷時刻",
+          center: `
+            <section class="quiz-shell">
+              <div class="quiz-header">
+                <span class="kicker">INTERACTIVE QUESTION</span>
+                <h2 class="quiz-question">這家公司最大的風險是？</h2>
+              </div>
+              <div class="option-grid">
+                ${mission.choices.map((choice) => `
+                  <button class="option" data-choice="${choice.key}" data-state="${state.selected === choice.key ? "selected" : "idle"}">
+                    <strong>${choice.key}.</strong>
+                    <span>${choice.text}</span>
+                  </button>
+                `).join("")}
+              </div>
+            </section>
+          `,
+          message: `
+            <div class="system-dialog" style="--dialog-bg: url('./素材/scene1拷貝.png');">
+              <div class="dialog-body">
+                <span class="system-tag">系統</span>
+                <p class="dialog-copy">請根據保留線索做出判斷，確認真正造成獲利失真的風險來源。</p>
+                <span class="dialog-caret"></span>
+              </div>
+            </div>
+          `,
+          actionBar: `
+            <div class="action-row" style="margin-top: 8px; justify-content: space-between;">
+              <button class="secondary" data-action="open-clues">回看線索</button>
+              <button class="primary" data-action="submit" ${state.selected ? "" : "disabled"}>提交答案</button>
+            </div>
+          `,
+          showLoading: false,
+          progressWidth: state.selected ? 100 : 38,
+        });
+      }
+
+      function renderResult() {
+        const ok = state.outcome?.correct;
+        const selected = state.selected;
+        const resultRows = mission.choices.map((choice) => {
+          const isCorrect = choice.key === mission.answer;
+          const isSelectedWrong = !ok && choice.key === selected;
+          const rowClass = isCorrect ? "correct" : isSelectedWrong ? "wrong" : "";
+          const marker = isCorrect
+            ? `<span class="result-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 12.5 10 16.5 18 8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`
+            : isSelectedWrong
+              ? `<span class="result-check" style="color: var(--danger); border-color: rgba(227, 90, 58, 0.5);" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 7 17 17M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>`
+              : `<span></span>`;
+          return `
+            <div class="result-answer-row ${rowClass}">
+              <strong>${choice.key}</strong>
+              <span>${choice.text}</span>
+              ${marker}
+            </div>
+          `;
+        }).join("");
+        return renderScene({
+          header: "RESULT | 真相揭露",
+          center: `
+            <section class="result-shell">
+              <div class="result-correct-bar">
+                <div class="result-answer-box">
+                  <p class="result-question-title">Q. 為什麼帳面上的獲利與實際狀況不符？</p>
+                  ${resultRows}
+                </div>
+                <div class="result-status ${ok ? "correct" : "wrong"}">${ok ? "CORRECT" : "WRONG"}</div>
+              </div>
+
+              <div class="result-inline-system">
+                <span class="system-tag">系統</span>
+                <p class="mini-copy" style="margin: 8px 0 0;">${ok ? "答案驗證完成，正在揭露被低估的真實成本與風險結構。" : "判斷有偏差，但真正答案與風險結構已為你展開。回頭看，就會更清楚。"}</p>
+              </div>
+
+              <section class="recalc-board reveal reveal-left">
+                <div class="recalc-head"><span>PROFIT RECALCULATING</span><span>FY 2024</span></div>
+                <div class="recalc-grid">
+                  <div class="recalc-card reveal reveal-left delay-1">
+                    <small>原始帳面獲利</small>
+                    <strong class="value-strong">NT$ 246m</strong>
+                    <strong class="up">+18.7%</strong>
+                    <small>YoY</small>
+                  </div>
+                  <div class="recalc-card recalc-center reveal delay-2">
+                    <div class="ring" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M5.5 12.5c3.4-5.8 9.3-7.6 13-4.7-1 5.8-5.2 9.3-10 9.3-1.1 0-2-.2-3-.6 1.8-.4 3.2-1.6 4.5-3.8-1.7.7-3.2.6-4.5-.2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    <div class="center-lines">
+                      <small>環境成本</small>
+                      <small>重估中...</small>
+                    </div>
+                  </div>
+                  <div class="recalc-card reveal reveal-right delay-3">
+                    <small>重估後獲利</small>
+                    <strong class="value-strong">NT$ 32m</strong>
+                    <strong class="down">-68.6%</strong>
+                    <small>YoY</small>
+                  </div>
+                </div>
+                <div class="chart">
+                  <div class="panel-head"><h3>獲利趨勢（重估後）</h3></div>
+                  <svg class="recalc-line-chart" viewBox="0 0 320 150" fill="none" aria-hidden="true">
+                    <path d="M20 126H300" stroke="rgba(255,255,255,0.08)"/>
+                    <path d="M20 98H300" stroke="rgba(255,255,255,0.05)"/>
+                    <path d="M20 70H300" stroke="rgba(255,255,255,0.05)"/>
+                    <path d="M20 42H300" stroke="rgba(255,255,255,0.05)"/>
+                    <path d="M38 106 L102 90 L166 74 L230 52 L286 118" stroke="#7fc9e8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M230 52 L286 118" stroke="#f07a55" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="38" cy="106" r="4" fill="#081017" stroke="#7fc9e8" stroke-width="2"/>
+                    <circle cx="102" cy="90" r="4" fill="#081017" stroke="#7fc9e8" stroke-width="2"/>
+                    <circle cx="166" cy="74" r="4" fill="#081017" stroke="#7fc9e8" stroke-width="2"/>
+                    <circle cx="230" cy="52" r="4" fill="#081017" stroke="#7fc9e8" stroke-width="2"/>
+                    <circle cx="286" cy="118" r="5" fill="#081017" stroke="#f07a55" stroke-width="2"/>
+                    <g fill="rgba(155,171,186,0.72)" font-size="11">
+                      <text x="28" y="144">2020</text>
+                      <text x="92" y="144">2021</text>
+                      <text x="156" y="144">2022</text>
+                      <text x="220" y="144">2023</text>
+                      <text x="276" y="144">2024</text>
+                    </g>
+                  </svg>
+                </div>
+              </section>
+
+              <section class="result-map reveal reveal-right">
+                <article class="risk-map">
+                  <div class="risk-map-head"><span>RISK MAP</span><span>企業環境成本關聯圖</span></div>
+                  <figure class="risk-map-figure">
+                    <img src="./素材/risk-map-reference.png" alt="企業環境成本關聯圖" />
+                  </figure>
+                </article>
+                <div class="result-quote"><span class="quote-line">臨界點不是危機預言，而是企業開始必須看見</span><br><strong>真正的成本</strong></div>
+              </section>
+
+              <section class="report-complete reveal reveal-left">
+                <div class="download-box">
+                  <div class="download-copy">
+                    <small>下載《臨界點報告》</small>
+                    <strong>破解下一個<em>企業風險</em></strong>
+                  </div>
+                  <figure class="result-cover">
+                    <img src="./素材/inflection-point-cover.png" alt="臨界點報告封面" />
+                  </figure>
+                  <a class="download-button" href="https://csrone.com/researches/2" target="_blank" rel="noreferrer">DOWNLOAD REPORT</a>
+                  <div class="download-status">
+                    <span>READY FOR DOWNLOAD</span>
+                    <span>下載已就緒</span>
+                  </div>
+                </div>
+              </section>
+            </section>
+          `,
+          actionBar: `
+            <div class="result-actions" style="margin-top: 2px;">
+              <button class="primary" data-action="restart">再玩一次</button>
+              <button class="secondary" data-action="share">分享</button>
+              <a class="secondary" href="https://csrone.com/" target="_blank" rel="noreferrer">CSRone 官網</a>
+            </div>
+          `,
+          showLoading: false,
+          showSystem: false,
+          progressWidth: 100,
+        });
+      }
+
+      function renderPage() {
+        if (state.step === "intro") return renderIntro();
+        if (state.step === "scan") return renderScan();
+        if (state.step === "clues") return renderClues();
+        if (state.step === "quiz") return renderQuiz();
+        return renderResult();
+      }
+
+      function render() {
+        page.innerHTML = renderPage();
+        renderStory();
+        setupLoadingPanel();
+        setupRevealSections();
+        statusPill.textContent =
+          state.step === "intro" ? "SYSTEM READY" :
+          state.step === "scan" ? "LIVE SCAN" :
+          state.step === "clues" ? "CLUE FLOW" :
+          state.step === "quiz" ? "DECISION TIME" : "CASE CLOSED";
+        wireEvents();
+      }
+
+      function removeClue(clueId) {
+        state.removed.add(clueId);
+        render();
+      }
+
+      function resetClues() {
+        state.removed = new Set();
+        render();
+      }
+
+      function attachClueSwipe(card) {
+        let startX = 0;
+        let currentX = 0;
+        let dragging = false;
+
+        card.addEventListener("pointerdown", (event) => {
+          if (event.target.closest("[data-clue-hint], [data-clue-remove]")) return;
+          dragging = true;
+          startX = event.clientX;
+          currentX = startX;
+          card.setPointerCapture(event.pointerId);
+        });
+
+        card.addEventListener("pointermove", (event) => {
+          if (!dragging) return;
+          currentX = event.clientX;
+          const dx = currentX - startX;
+          card.dataset.swipe = dx > 18 ? "right" : dx < -18 ? "left" : "";
+          card.style.transform = `translateX(${Math.max(-90, Math.min(90, dx))}px) rotate(${dx / 24}deg)`;
+        });
+
+        function finish(pointerId) {
+          if (!dragging) return;
+          dragging = false;
+          const dx = currentX - startX;
+          if (pointerId !== undefined) card.releasePointerCapture(pointerId);
+          if (Math.abs(dx) > 72) {
+            removeClue(card.dataset.evidence);
+            return;
+          }
+          card.dataset.swipe = "";
+          card.style.transform = "";
+        }
+
+        card.addEventListener("pointerup", (event) => finish(event.pointerId));
+        card.addEventListener("pointercancel", (event) => finish(event.pointerId));
+      }
+
+      function wireEvents() {
+        page.querySelectorAll("[data-action]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const action = button.dataset.action;
+            if (action === "start") startFlow();
+            if (action === "open-clues") goClues();
+            if (action === "open-quiz") goQuiz();
+            if (action === "reset-clues") resetClues();
+            if (action === "submit") submitAnswer(state.selected);
+            if (action === "restart") resetAll();
+            if (action === "share") shareExperience();
+          });
+        });
+
+        page.querySelectorAll("[data-evidence]").forEach((card) => {
+          attachClueSwipe(card);
+        });
+
+        page.querySelectorAll("[data-clue-hint]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const card = button.closest("[data-evidence]");
+            if (!card) return;
+            card.dataset.flipped = card.dataset.flipped === "true" ? "false" : "true";
+          });
+        });
+
+        page.querySelectorAll("[data-clue-remove]").forEach((button) => {
+          button.addEventListener("click", () => {
+            removeClue(button.dataset.clueRemove);
+          });
+        });
+
+        page.querySelectorAll("[data-choice]").forEach((button) => {
+          button.addEventListener("click", () => {
+            if (state.step !== "quiz") return;
+            state.selected = button.dataset.choice;
+            render();
+          });
+        });
+
+        storyGrid.querySelectorAll("[data-step]").forEach((button) => {
+          button.addEventListener("click", () => {
+            setStep(button.dataset.step);
+          });
+        });
+      }
+
+      render();
+    </script>
+  </body>
+</html>
