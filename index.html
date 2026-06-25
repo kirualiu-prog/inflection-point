@@ -1000,30 +1000,6 @@
         font-size: 1rem;
       }
 
-      .loading-topline[data-complete="true"] {
-        min-height: 54px;
-        display: grid;
-        grid-template-columns: 1fr;
-        place-items: center;
-        justify-items: center;
-        text-align: center;
-        width: 100%;
-      }
-
-      .loading-topline[data-complete="true"] h3 {
-        width: 100%;
-        font-size: clamp(1.6rem, 6vw, 2rem);
-        color: var(--blue);
-        letter-spacing: 0.18em;
-        text-align: center;
-        animation: readyBlink 1s ease-in-out 3;
-        text-shadow: 0 0 18px rgba(79, 183, 215, 0.28);
-      }
-
-      .loading-topline[data-complete="true"] .label {
-        display: none;
-      }
-
       .loading-topline .label:empty {
         display: none;
       }
@@ -1037,6 +1013,39 @@
 
       .scene-shell.is-intro .loading-track {
         padding: 7px 8px 8px;
+      }
+
+      .loading-hint {
+        margin: 0;
+        color: rgba(155, 171, 186, 0.88);
+        font-size: 0.78rem;
+        line-height: 1.4;
+        letter-spacing: 0.06em;
+        text-align: center;
+      }
+
+      .loading-action {
+        min-height: 56px;
+        width: 100%;
+        border-radius: 16px;
+        border: 2px solid rgba(215, 162, 93, 0.44);
+        background: linear-gradient(180deg, rgba(19, 29, 38, 0.94), rgba(7, 13, 19, 0.98));
+        color: var(--gold);
+        font-size: 1.18rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+      }
+
+      .loading-action .report-button-inner {
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .loading-action svg {
+        width: 15px;
+        height: 15px;
+        opacity: 0.9;
       }
 
       .clue-grid {
@@ -2090,6 +2099,8 @@
       const state = {
         step: "intro",
         unlocked: 0,
+        introLoading: true,
+        introReady: false,
         picked: new Set(),
         removed: new Set(),
         selected: null,
@@ -2100,7 +2111,9 @@
       const page = document.querySelector("#page");
       const storyGrid = document.querySelector("#story-grid");
       const statusPill = document.querySelector("#status-pill");
+      const GAME_URL = "https://inflection-point-cl1.pages.dev/";
       let loadingFrame = null;
+      let lastRenderedStep = null;
 
       function unlock(stepId) {
         const idx = steps.findIndex((step) => step.id === stepId);
@@ -2118,8 +2131,18 @@
       }
 
       function startFlow() {
+        if (state.step === "intro") {
+          if (state.introLoading || !state.introReady) return;
+          state.introReady = false;
+        }
         unlock("scan");
         setStep("scan");
+      }
+
+      function finishIntroLoading() {
+        state.introLoading = false;
+        state.introReady = true;
+        render();
       }
 
       function goClues() {
@@ -2175,6 +2198,8 @@
       function resetAll() {
         state.step = "intro";
         state.unlocked = 0;
+        state.introLoading = true;
+        state.introReady = false;
         state.picked = new Set();
         state.removed = new Set();
         state.selected = null;
@@ -2186,8 +2211,8 @@
       async function shareExperience() {
         const shareData = {
           title: "臨界點解謎室",
-          text: "我剛完成臨界點解謎室，一起來看企業真正的成本。",
-          url: "https://csrone.com/researches/2",
+          text: "我剛完成臨界點解謎室，一起來挑戰企業風險解謎。",
+          url: GAME_URL,
         };
 
         try {
@@ -2223,7 +2248,7 @@
         `).join("");
       }
 
-      function renderScene({ header, center, message, progressWidth, actionBar, showLoading = true, showSystem = true, sceneClass = "" }) {
+      function renderScene({ header, center, message, progressWidth, actionBar, showLoading = true, showSystem = true, sceneClass = "", loadingContent = "" }) {
         return `
           <section class="page">
             <article class="page-card scene-shell ${sceneClass}">
@@ -2241,15 +2266,7 @@
 
                 ${showLoading ? `
                   <article class="scene-panel compact loading-panel" style="position: relative;">
-                    <div class="loading-inner">
-                      <div class="loading-topline">
-                        <h3 data-loading-title>載入案件資料中...</h3>
-                        <span class="label" data-loading-label>0%</span>
-                      </div>
-                      <div class="loading-track">
-                        <div class="bar is-loading"><span data-loading-fill style="--width: 0%"></span></div>
-                      </div>
-                    </div>
+                    ${loadingContent}
                   </article>
                 ` : ""}
 
@@ -2276,6 +2293,7 @@
         const label = page.querySelector("[data-loading-label]");
         const fill = page.querySelector("[data-loading-fill]");
         const topline = page.querySelector(".loading-topline");
+        const hint = page.querySelector("[data-loading-hint]");
         const track = page.querySelector(".loading-track");
         if (!title || !label || !fill) return;
         if (loadingFrame) cancelAnimationFrame(loadingFrame);
@@ -2283,7 +2301,7 @@
         if (topline) topline.dataset.complete = "false";
         if (track) track.hidden = false;
 
-        const duration = 5000;
+        const duration = 1500;
         const start = performance.now();
 
         function tick(now) {
@@ -2292,10 +2310,9 @@
           fill.style.setProperty("--width", `${value}%`);
 
           if (value >= 100) {
-            title.textContent = "準備完成";
-            label.textContent = "";
-            if (topline) topline.dataset.complete = "true";
-            if (track) track.hidden = true;
+            if (hint) hint.textContent = "任務入口已開啟";
+            if (topline) topline.dataset.complete = "false";
+            if (state.step === "intro" && state.introLoading) finishIntroLoading();
             loadingFrame = null;
             return;
           }
@@ -2330,7 +2347,7 @@
               <div class="report-stack">
                 <div class="report-topline">
                   <span>CORPORATE FINANCIAL REPORT</span>
-                  <span>FY 2024</span>
+                  <span>FY 2026</span>
                 </div>
                 <div class="report-divider"></div>
                 <h2 class="report-title">年度獲利成長</h2>
@@ -2354,15 +2371,6 @@
                   <span>任務目標</span>
                   <strong>找出消失的獲利</strong>
                 </div>
-                <button class="report-button" data-action="start">
-                  <span class="report-button-inner">
-                    <svg viewBox="0 0 24 24" fill="none">
-                      <path d="M4.5 7.5h5l1.6 1.8h8.4v7.2a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-                      <path d="M4.5 9.3V7a2 2 0 0 1 2-2h2.7l1.7 1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    啟動任務
-                  </span>
-                </button>
               </div>
             </section>
           `,
@@ -2370,11 +2378,36 @@
             <div class="system-dialog" style="--dialog-bg: url('./素材/scene1拷貝.png');">
               <div class="dialog-body">
                 <span class="system-tag">系統</span>
-                <p class="dialog-copy">新任務已接收。請啟動分析模組，調查獲利異常事件。</p>
+                <p class="dialog-copy">${state.introReady ? "案件資料已就緒。請啟動任務，進入風險掃描。" : "分析模組載入中，完成後將開啟任務入口。"}</p>
                 <span class="dialog-caret"></span>
               </div>
             </div>
           `,
+          loadingContent: state.introReady ? `
+            <div class="loading-inner">
+              <button class="loading-action" data-action="start">
+                <span class="report-button-inner">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4.5 7.5h5l1.6 1.8h8.4v7.2a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                    <path d="M4.5 9.3V7a2 2 0 0 1 2-2h2.7l1.7 1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  啟動任務
+                </span>
+              </button>
+            </div>
+          ` : `
+            <div class="loading-inner">
+              <div class="loading-topline">
+                <h3 data-loading-title>載入案件資料中...</h3>
+                <span class="label" data-loading-label>0%</span>
+              </div>
+              <div class="loading-track">
+                <div class="bar is-loading"><span data-loading-fill style="--width: 0%"></span></div>
+              </div>
+              <p class="loading-hint" data-loading-hint>分析模組準備中</p>
+            </div>
+          `,
+          showLoading: true,
           progressWidth: 42,
         });
       }
@@ -2388,7 +2421,7 @@
                 <article class="scan-card report">
                   <div class="scan-card-head">
                     <span>CORPORATE FINANCIAL REPORT</span>
-                    <span>FY 2024</span>
+                    <span>FY 2026</span>
                   </div>
                   <h3 class="scan-report-title">年度獲利成長</h3>
                   <div class="scan-metric-card">
@@ -2738,7 +2771,7 @@
               </div>
 
               <section class="recalc-board reveal reveal-left">
-                <div class="recalc-head"><span>PROFIT RECALCULATING</span><span>FY 2024</span></div>
+                <div class="recalc-head"><span>PROFIT RECALCULATING</span><span>FY 2026</span></div>
                 <div class="recalc-grid">
                   <div class="recalc-card reveal reveal-left delay-1">
                     <small>原始帳面獲利</small>
@@ -2839,12 +2872,19 @@
       }
 
       function render() {
+        const previousStep = lastRenderedStep;
         page.innerHTML = renderPage();
         renderStory();
         setupLoadingPanel();
         setupRevealSections();
+        if (previousStep !== state.step) {
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+          });
+        }
+        lastRenderedStep = state.step;
         statusPill.textContent =
-          state.step === "intro" ? "SYSTEM READY" :
+          state.step === "intro" ? (state.introLoading ? "SYSTEM LOADING" : "SYSTEM READY") :
           state.step === "scan" ? "LIVE SCAN" :
           state.step === "clues" ? "CLUE FLOW" :
           state.step === "quiz" ? "DECISION TIME" : "CASE CLOSED";
