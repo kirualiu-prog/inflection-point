@@ -212,6 +212,10 @@
         gap: 10px;
       }
 
+      .scene-shell.is-intro .scene-main {
+        gap: 8px;
+      }
+
       .scene-panel {
         border-radius: 24px;
         padding: 13px;
@@ -226,8 +230,21 @@
         min-height: 0;
       }
 
+      .scene-shell.is-intro .scene-panel {
+        padding: 11px;
+      }
+
+      .scene-shell.is-intro .scene-panel.compact {
+        padding-top: 9px;
+        padding-bottom: 9px;
+      }
+
       .system-panel {
         padding: 10px 12px;
+      }
+
+      .scene-shell.is-intro .system-panel {
+        padding: 8px 10px;
       }
 
       .page-title {
@@ -418,6 +435,15 @@
         gap: 10px;
       }
 
+      .scene-shell.is-intro .report-card {
+        margin-top: 4px;
+        padding: 12px;
+      }
+
+      .scene-shell.is-intro .report-stack {
+        gap: 8px;
+      }
+
       .report-topline {
         display: flex;
         justify-content: space-between;
@@ -495,6 +521,11 @@
         gap: 6px;
       }
 
+      .scene-shell.is-intro .report-target {
+        padding: 11px 13px;
+        gap: 4px;
+      }
+
       .report-target span {
         font-size: 0.95rem;
         color: rgba(13, 21, 27, 0.64);
@@ -517,6 +548,10 @@
         font-weight: 700;
         letter-spacing: 0.08em;
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+      }
+
+      .scene-shell.is-intro .report-button {
+        min-height: 52px;
       }
 
       .report-button .report-button-inner {
@@ -829,6 +864,12 @@
         gap: 8px;
       }
 
+      .scene-shell.is-intro .system-dialog .dialog-body {
+        min-height: 108px;
+        padding: 10px 12px 8px;
+        gap: 6px;
+      }
+
       .system-tag {
         display: inline-flex;
         align-items: center;
@@ -845,6 +886,10 @@
         font-size: clamp(1.08rem, 2.25vw, 1.7rem);
         line-height: 1.55;
         color: #eef4f8;
+      }
+
+      .scene-shell.is-intro .dialog-copy {
+        line-height: 1.45;
       }
 
       .dialog-caret {
@@ -936,6 +981,11 @@
         gap: 8px;
       }
 
+      .scene-shell.is-intro .loading-inner {
+        padding: 10px 12px 12px;
+        gap: 6px;
+      }
+
       .loading-topline {
         display: flex;
         justify-content: space-between;
@@ -983,6 +1033,10 @@
         border-radius: 14px;
         border: 1px solid rgba(79, 183, 215, 0.1);
         background: rgba(0, 0, 0, 0.22);
+      }
+
+      .scene-shell.is-intro .loading-track {
+        padding: 7px 8px 8px;
       }
 
       .clue-grid {
@@ -2169,10 +2223,10 @@
         `).join("");
       }
 
-      function renderScene({ header, center, message, progressWidth, actionBar, showLoading = true, showSystem = true }) {
+      function renderScene({ header, center, message, progressWidth, actionBar, showLoading = true, showSystem = true, sceneClass = "" }) {
         return `
           <section class="page">
-            <article class="page-card scene-shell">
+            <article class="page-card scene-shell ${sceneClass}">
                 <div class="scene-main">
                 <div class="scene-panel compact">
                   <div class="panel-head">
@@ -2184,6 +2238,20 @@
                 <div class="scene-panel">
                   ${center}
                 </div>
+
+                ${showLoading ? `
+                  <article class="scene-panel compact loading-panel" style="position: relative;">
+                    <div class="loading-inner">
+                      <div class="loading-topline">
+                        <h3 data-loading-title>載入案件資料中...</h3>
+                        <span class="label" data-loading-label>0%</span>
+                      </div>
+                      <div class="loading-track">
+                        <div class="bar is-loading"><span data-loading-fill style="--width: 0%"></span></div>
+                      </div>
+                    </div>
+                  </article>
+                ` : ""}
 
                 ${showSystem ? `
                   <div class="scene-panel compact system-panel">
@@ -2199,20 +2267,6 @@
                 ` : ""}
               </div>
             </article>
-
-            ${showLoading ? `
-              <article class="page-card loading-panel" style="position: relative;">
-                <div class="loading-inner">
-                  <div class="loading-topline">
-                    <h3 data-loading-title>載入案件資料中...</h3>
-                    <span class="label" data-loading-label>0%</span>
-                  </div>
-                  <div class="loading-track">
-                    <div class="bar is-loading"><span data-loading-fill style="--width: 0%"></span></div>
-                  </div>
-                </div>
-              </article>
-            ` : ""}
           </section>
         `;
       }
@@ -2270,6 +2324,7 @@
       function renderIntro() {
         return renderScene({
           header: `${mission.mission} | 找出消失的獲利`,
+          sceneClass: "is-intro",
           center: `
             <section class="report-card" aria-label="年度獲利成長任務卡">
               <div class="report-stack">
