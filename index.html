@@ -2144,6 +2144,10 @@
 
       function setStep(stepId) {
         if (!canOpen(stepId)) return;
+        if (stepId === "intro" && state.step !== "intro") {
+          state.introLoading = true;
+          state.introReady = false;
+        }
         state.step = stepId;
         render();
       }
@@ -2316,7 +2320,11 @@
         const title = page.querySelector("[data-loading-title]");
         const label = page.querySelector("[data-loading-label]");
         const fill = page.querySelector("[data-loading-fill]");
-        if (!title || !label || !fill) return;
+        if (!title || !label || !fill) {
+          if (loadingFrame) cancelAnimationFrame(loadingFrame);
+          loadingFrame = null;
+          return;
+        }
         if (loadingFrame) cancelAnimationFrame(loadingFrame);
         if (panel) panel.dataset.ready = "false";
 
