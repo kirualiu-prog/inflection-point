@@ -620,6 +620,7 @@
         padding: 10px;
         display: grid;
         gap: 8px;
+        width: 100%;
       }
 
       .scan-card-head {
@@ -724,8 +725,9 @@
 
       .scan-side-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 1fr;
         gap: 10px;
+        width: 100%;
       }
 
       .scan-side-card {
@@ -782,29 +784,31 @@
         animation: readyBlink 1.8s ease-in-out infinite;
       }
 
-      .scan-alert .timeline {
-        gap: 6px;
+      .scan-alert-bars {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
       }
 
-      .scan-alert .timeline-row {
-        grid-template-columns: 1fr;
-        gap: 4px;
-        align-items: stretch;
-        font-size: 0.75rem;
+      .scan-alert-metric {
+        display: grid;
+        gap: 5px;
       }
 
-      .scan-alert .timeline-row span,
-      .scan-alert .timeline-row strong {
-        line-height: 1.1;
+      .scan-alert-metric span {
+        font-size: 0.68rem;
+        line-height: 1.15;
+        color: var(--muted);
+        letter-spacing: 0.06em;
       }
 
-      .scan-alert .timeline-row strong {
-        justify-self: end;
+      .scan-alert-metric strong {
         color: rgba(237, 242, 246, 0.82);
-        font-size: 0.74rem;
+        font-size: 0.8rem;
+        line-height: 1;
       }
 
-      .scan-alert .bar {
+      .scan-alert-metric .bar {
         height: 10px;
       }
 
@@ -876,15 +880,15 @@
         min-height: 0;
         padding: 0;
         color: var(--blue);
-        font-size: 0.9rem;
+        font-size: 0.82rem;
         letter-spacing: 0.08em;
       }
 
       .dialog-copy {
         margin: 0;
         max-width: 26ch;
-        font-size: clamp(1.08rem, 2.25vw, 1.7rem);
-        line-height: 1.55;
+        font-size: 1rem;
+        line-height: 1.48;
         color: #eef4f8;
       }
 
@@ -2019,7 +2023,7 @@
           grid-template-columns: 1fr;
         }
         .scan-side-grid {
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 1fr;
           gap: 8px;
         }
         .stage-strip { top: 8px; }
@@ -2055,7 +2059,7 @@
           grid-template-columns: auto 1fr;
         }
         .scan-side-grid {
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 1fr;
         }
         .report-arrow {
           display: none;
@@ -2367,17 +2371,24 @@
       }
 
       function setupRevealSections() {
-        const sections = page.querySelectorAll(".reveal");
+        const sections = [...page.querySelectorAll(".reveal")];
         if (!sections.length) return;
+        const deferred = sections.filter((section) => section.dataset.revealAfter === "recalc");
+        const primary = sections.filter((section) => section.dataset.revealAfter !== "recalc");
         const observer = new IntersectionObserver((entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
               entry.target.classList.add("is-visible");
+              if (entry.target.classList.contains("recalc-board") && deferred.length) {
+                window.setTimeout(() => {
+                  deferred.forEach((section) => observer.observe(section));
+                }, 2300);
+              }
               observer.unobserve(entry.target);
             }
           });
         }, { threshold: 0.24 });
-        sections.forEach((section) => observer.observe(section));
+        primary.forEach((section) => observer.observe(section));
       }
 
       function renderIntro() {
@@ -2506,37 +2517,22 @@
                       <path d="M18 48H302" stroke="rgba(255,255,255,0.05)"/>
                       <path d="M18 24H302" stroke="rgba(255,255,255,0.05)"/>
                       <path d="M22 84 L92 62 L155 46 L222 32 L286 10" stroke="#53b9d8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="22" cy="84" r="4" fill="#081017" stroke="#53b9d8" stroke-width="2"/>
                       <circle cx="92" cy="62" r="4" fill="#081017" stroke="#53b9d8" stroke-width="2"/>
                       <circle cx="155" cy="46" r="4" fill="#081017" stroke="#53b9d8" stroke-width="2"/>
                       <circle cx="222" cy="32" r="4" fill="#081017" stroke="#53b9d8" stroke-width="2"/>
                       <circle cx="286" cy="10" r="4" fill="#081017" stroke="#53b9d8" stroke-width="2"/>
                       <g fill="rgba(155,171,186,0.72)" font-size="11">
-                        <text x="30" y="106">2020</text>
-                        <text x="95" y="106">2021</text>
-                        <text x="160" y="106">2022</text>
-                        <text x="226" y="106">2023</text>
-                        <text x="282" y="106">2024</text>
+                        <text x="18" y="106">2021</text>
+                        <text x="82" y="106">2022</text>
+                        <text x="146" y="106">2023</text>
+                        <text x="210" y="106">2024</text>
+                        <text x="274" y="106">2025</text>
                       </g>
                     </svg>
                   </div>
                 </article>
                 <aside class="scan-side-grid">
-                  <article class="scan-card side">
-                    <div class="scan-side-list">
-                      <div class="scan-side-item">
-                        <label>DATA SCAN</label>
-                        <b>87%</b>
-                      </div>
-                      <div class="scan-side-item">
-                        <label>SOURCE</label>
-                        <strong>FINANCIAL DB</strong>
-                      </div>
-                      <div class="scan-side-item">
-                        <label>CROSS CHECK</label>
-                        <strong>IN PROGRESS</strong>
-                      </div>
-                    </div>
-                  </article>
                   <article class="scan-card side scan-alert">
                     <span class="scan-alert-label">RISK ALERT</span>
                     <div class="scan-alert-row">
@@ -2549,10 +2545,22 @@
                         </svg>
                       </div>
                     </div>
-                    <div class="timeline">
-                      <div class="timeline-row"><span>風險掃描</span><div class="bar"><span style="--width: 86%"></span></div><strong>86%</strong></div>
-                      <div class="timeline-row"><span>資料可信度</span><div class="bar"><span style="--width: 26%"></span></div><strong>26%</strong></div>
-                      <div class="timeline-row"><span>異常訊號</span><div class="bar"><span style="--width: 92%"></span></div><strong>92%</strong></div>
+                    <div class="scan-alert-bars">
+                      <div class="scan-alert-metric">
+                        <span>風險掃描</span>
+                        <div class="bar"><span style="--width: 86%"></span></div>
+                        <strong>86%</strong>
+                      </div>
+                      <div class="scan-alert-metric">
+                        <span>資料可信度</span>
+                        <div class="bar"><span style="--width: 26%"></span></div>
+                        <strong>26%</strong>
+                      </div>
+                      <div class="scan-alert-metric">
+                        <span>異常訊號</span>
+                        <div class="bar"><span style="--width: 92%"></span></div>
+                        <strong>92%</strong>
+                      </div>
                     </div>
                   </article>
                 </aside>
@@ -2809,7 +2817,7 @@
               </div>
 
               <section class="recalc-board reveal reveal-left">
-                <div class="recalc-head"><span>PROFIT RECALCULATING</span><span>FY 2026</span></div>
+                <div class="recalc-head"><span>PROFIT RECALCULATING</span><span>2021-2025</span></div>
                 <div class="recalc-grid">
                   <div class="recalc-card reveal reveal-left delay-1">
                     <small>原始帳面獲利</small>
@@ -2835,7 +2843,7 @@
                     <small>YoY</small>
                   </div>
                 </div>
-                <div class="chart">
+                <div class="chart reveal reveal-left" data-reveal-after="recalc">
                   <div class="panel-head"><h3>獲利趨勢（重估後）</h3></div>
                   <svg class="recalc-line-chart" viewBox="0 0 320 150" fill="none" aria-hidden="true">
                     <path d="M20 126H300" stroke="rgba(255,255,255,0.08)"/>
@@ -2850,17 +2858,17 @@
                     <circle cx="230" cy="52" r="4" fill="#081017" stroke="#7fc9e8" stroke-width="2"/>
                     <circle cx="286" cy="118" r="5" fill="#081017" stroke="#f07a55" stroke-width="2"/>
                     <g fill="rgba(155,171,186,0.72)" font-size="11">
-                      <text x="28" y="144">2020</text>
-                      <text x="92" y="144">2021</text>
-                      <text x="156" y="144">2022</text>
-                      <text x="220" y="144">2023</text>
-                      <text x="276" y="144">2024</text>
+                      <text x="28" y="144">2021</text>
+                      <text x="92" y="144">2022</text>
+                      <text x="156" y="144">2023</text>
+                      <text x="220" y="144">2024</text>
+                      <text x="276" y="144">2025</text>
                     </g>
                   </svg>
                 </div>
               </section>
 
-              <section class="result-map reveal reveal-right">
+              <section class="result-map reveal reveal-right" data-reveal-after="recalc">
                 <article class="risk-map">
                   <div class="risk-map-head"><span>RISK MAP</span><span>企業環境成本關聯圖</span></div>
                   <figure class="risk-map-figure">
@@ -2870,7 +2878,7 @@
                 <div class="result-quote"><span class="quote-line">臨界點不是危機預言，而是企業開始必須看見</span><br><strong>真正的成本</strong></div>
               </section>
 
-              <section class="report-complete reveal reveal-left">
+              <section class="report-complete reveal reveal-left" data-reveal-after="recalc">
                 <div class="download-box">
                   <div class="download-copy">
                     <small>下載《臨界點報告》</small>
@@ -3013,7 +3021,11 @@
           button.addEventListener("click", () => {
             if (state.step !== "quiz") return;
             state.selected = button.dataset.choice;
-            render();
+            page.querySelectorAll("[data-choice]").forEach((choice) => {
+              choice.dataset.state = choice.dataset.choice === state.selected ? "selected" : "idle";
+            });
+            const submitButton = page.querySelector("[data-action='submit']");
+            if (submitButton) submitButton.disabled = false;
           });
         });
 
