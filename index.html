@@ -2561,7 +2561,19 @@
           header: "CLUE ANALYSIS | 線索分頁",
           center: `
             <section class="evidence-shell">
-              <p class="mini-copy" style="margin: 0 0 2px;">左右滑動排除無效線索，只有留下真正異常項目，系統才會開啟解題。（點卡片右上角圖示有小提示）。</p>
+              <div class="evidence-goal">
+                <div class="evidence-goal-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4.5 7.5h5l1.6 1.8h8.4v7.2a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                    <path d="M4.5 9.3V7a2 2 0 0 1 2-2h2.7l1.7 1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="evidence-goal-copy">
+                  <span>任務目標</span>
+                  <strong>${ready ? "正確線索已保留，可進入答題" : "把錯誤線索滑掉，留下真正異常項目"}</strong>
+                </div>
+              </div>
+              <p class="mini-copy" style="margin: -2px 0 2px; font-size: 0.76rem; line-height: 1.45; opacity: 0.82;">（點卡片右上角圖示有小提示）</p>
               <div class="evidence-grid">
                 ${activeClues.map((clue) => `
                   <article class="evidence-card" data-evidence="${clue.id}" data-tone="${clue.tone}">
@@ -2617,18 +2629,6 @@
                     </div>
                   </article>
                 `).join("")}
-              </div>
-              <div class="evidence-goal">
-                <div class="evidence-goal-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M4.5 7.5h5l1.6 1.8h8.4v7.2a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-                    <path d="M4.5 9.3V7a2 2 0 0 1 2-2h2.7l1.7 1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="evidence-goal-copy">
-                  <span>任務目標</span>
-                  <strong>${ready ? "正確線索已保留，可進入答題" : "把錯誤線索滑掉，留下真正異常項目"}</strong>
-                </div>
               </div>
             </section>
           `,
