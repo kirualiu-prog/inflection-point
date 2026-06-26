@@ -1480,6 +1480,10 @@
         gap: 12px;
       }
 
+      .result-shell > * {
+        min-width: 0;
+      }
+
       .result-correct-bar {
         display: grid;
         gap: 10px;
@@ -1511,6 +1515,10 @@
         gap: 10px;
         padding: 0 12px;
         color: rgba(237, 242, 246, 0.88);
+      }
+
+      .result-answer-row span {
+        min-width: 0;
       }
 
       .result-answer-row.correct {
@@ -2054,6 +2062,14 @@
         }
         .report-button {
           font-size: 1.28rem;
+        }
+        .risk-map-head,
+        .recalc-head,
+        .download-status {
+          flex-wrap: wrap;
+        }
+        .result-quote .quote-line {
+          white-space: normal;
         }
       }
     </style>
